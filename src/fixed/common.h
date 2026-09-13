@@ -2706,7 +2706,8 @@ vec3i boxPushOut(const AABBi &a, const AABBi &b);
 #define matrixGet() *gMatrixPtr
 
 #ifdef USE_ASM
-    extern "C" {
+    extern "C"
+    {
         void matrixPush_asm();
         void matrixSetIdentity_asm();
         void matrixSetBasis_asm(Matrix &dst __asm("a0"), const Matrix &src __asm("a1"));
@@ -2742,9 +2743,7 @@ vec3i boxPushOut(const AABBi &a, const AABBi &b);
     #define boxTranslate            boxTranslate_asm
     #define boxRotateYQ             boxRotateYQ_asm
     #define sphereIsVisible         sphereIsVisible_asm
-
-    void flush_c();
-    #define flush                   flush_c
+    #define flush                   flush_asm
 #else
     #define matrixPush              matrixPush_c
     #define matrixSetIdentity       matrixSetIdentity_c

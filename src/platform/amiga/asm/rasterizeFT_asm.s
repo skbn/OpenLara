@@ -25,14 +25,15 @@ rasterizeFT_asm:
     lsl.l #8,d6
     lea (a3,d6.l),a3
 
-    clr.l d0
-    clr.l d1
+    moveq #0,d0
+    moveq #0,d1
     clr.l 0(sp)
     clr.l 4(sp)
     clr.l 8(sp)
     clr.l 12(sp)
 
 .outer_loop:
+
 .L_advance:
     tst.l d0
     bne .L_done
@@ -51,7 +52,6 @@ rasterizeFT_asm:
     ext.l d0
 
     move.w 0(a1),d2
-    ext.l d2
 
     move.l 8(a1),d4
 
@@ -89,6 +89,7 @@ rasterizeFT_asm:
     bra .L_advance
 
 .L_done:
+
 .R_advance:
     tst.l d1
     bne .R_done
@@ -107,7 +108,6 @@ rasterizeFT_asm:
     ext.l d1
 
     move.w 0(a2),d3
-    ext.l d3
 
     move.l 8(a2),d5
 
@@ -271,9 +271,8 @@ rasterizeFT_asm:
     move.b (a4,d1.l),d6
 
     move.b (a3,d6.l),d6
-    move.b d6,(a6)
-    move.b d6,1(a6)
-    addq.l #2,a6
+    move.b d6,(a6)+
+    move.b d6,(a6)+
     add.l d4,d7
     dbra d0,.pix2_loop
 

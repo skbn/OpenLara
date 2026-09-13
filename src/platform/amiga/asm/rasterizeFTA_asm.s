@@ -25,14 +25,15 @@ rasterizeFTA_asm:
     lsl.l #8,d6
     lea (a3,d6.l),a3
 
-    clr.l d0
-    clr.l d1
+    moveq #0,d0
+    moveq #0,d1
     clr.l 0(sp)
     clr.l 4(sp)
     clr.l 8(sp)
     clr.l 12(sp)
 
 .outer_loop:
+
 .L_advance:
     tst.l d0
     bne .L_done
@@ -51,7 +52,6 @@ rasterizeFTA_asm:
     ext.l d0
 
     move.w 0(a1),d2
-    ext.l d2
 
     move.l 8(a1),d4
 
@@ -88,6 +88,7 @@ rasterizeFTA_asm:
     bra .L_advance
 
 .L_done:
+
 .R_advance:
     tst.l d1
     bne .R_done
@@ -106,7 +107,6 @@ rasterizeFTA_asm:
     ext.l d1
 
     move.w 0(a2),d3
-    ext.l d3
 
     move.l 8(a2),d5
 
@@ -148,6 +148,7 @@ rasterizeFTA_asm:
     ble .h_ok
 
     move.l d1,d6
+    
 .h_ok:
     sub.l d6,d0
     sub.l d6,d1
@@ -209,7 +210,6 @@ rasterizeFTA_asm:
     or.w d6,d1
     moveq #0,d6
     move.b (a4,d1.l),d6
-    tst.b d6
     beq .odd_start_skip
 
     move.b (a3,d6.l),d6
@@ -237,7 +237,6 @@ rasterizeFTA_asm:
     or.w d6,d1
     moveq #0,d6
     move.b (a4,d1.l),d6
-    tst.b d6
     beq .tail_done
 
     move.b (a3,d6.l),d6
@@ -266,8 +265,6 @@ rasterizeFTA_asm:
     or.w d6,d1
     moveq #0,d6
     move.b (a4,d1.l),d6
-    add.l d4,d7
-    tst.b d6
     beq .pix2_skip
 
     move.b (a3,d6.l),d6
@@ -275,6 +272,7 @@ rasterizeFTA_asm:
     move.b d6,1(a6)
 
 .pix2_skip:
+    add.l d4,d7
     addq.l #2,a6
     dbra d0,.pix2_loop
 

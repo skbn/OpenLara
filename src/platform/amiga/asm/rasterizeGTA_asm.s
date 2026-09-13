@@ -19,8 +19,8 @@ rasterizeGTA_asm:
     move.l _gTile,a4
     lea _divTable,a5
 
-    clr.l d0
-    clr.l d1
+    moveq #0,d0
+    moveq #0,d1
     clr.l 0(sp)
     clr.l 4(sp)
     clr.l 8(sp)
@@ -29,6 +29,7 @@ rasterizeGTA_asm:
     clr.l 20(sp)
 
 .outer_loop:
+
     ; advance left edge
     ; d0=Lh d2=Lx d4=Lt d6=Lg
 .L_advance:
@@ -54,7 +55,6 @@ rasterizeGTA_asm:
     ext.l d0
 
     move.w 0(a1),d2
-    ext.l d2
 
     moveq #0,d6
     move.b 6(a1),d6
@@ -107,6 +107,7 @@ rasterizeGTA_asm:
     bra .L_advance
 
 .L_done:
+
     ; advance right edge
     ; d1=Rh d3=Rx d5=Rt d7=Rg
 .R_advance:
@@ -132,7 +133,6 @@ rasterizeGTA_asm:
     ext.l d1
 
     move.w 0(a2),d3
-    ext.l d3
 
     moveq #0,d7
     move.b 6(a2),d7
@@ -268,7 +268,6 @@ rasterizeGTA_asm:
     or.w d3,d0
     moveq #0,d3
     move.b (a4,d0.l),d3
-    tst.b d3
     beq .gta_odd_skip
 
     ; color from lightmap + (g<<8 | tile_idx)
@@ -303,7 +302,6 @@ rasterizeGTA_asm:
     or.w d0,d3
     moveq #0,d0
     move.b (a4,d3.l),d0
-    tst.b d0
     beq .tail_done
 
     ; lightmap, write at ptr[width-1]
@@ -338,20 +336,18 @@ rasterizeGTA_asm:
     or.w d3,d0
     moveq #0,d3
     move.b (a4,d0.l),d3
-
-    addq.l #2,a6
-    add.l d5,d1
-    tst.b d3
     beq .gta_pix2_skip
 
     ; lightmap, write both bytes
     move.l d2,d0
     move.b d3,d0
     move.b (a3,d0.l),d3
-    move.b d3,-2(a6)
-    move.b d3,-1(a6)
+    move.b d3,(a6)
+    move.b d3,1(a6)
 
 .gta_pix2_skip:
+    addq.l #2,a6
+    add.l d5,d1
     add.l d6,d2
     dbra d4,.pix2_loop
 

@@ -8,7 +8,8 @@ extern uint8* gLightmap;
 extern const uint8* gTile;
 
 #ifdef USE_ASM
-    extern "C" {
+    extern "C"
+    {
         void rasterize_dummy(uint16* pixel __asm("a0"), const VertexLink* L __asm("a1"), const VertexLink* R __asm("a2"));
         void rasterizeS_asm(uint16* pixel __asm("a0"), const VertexLink* L __asm("a1"), const VertexLink* R __asm("a2"));
         void rasterizeF_asm(uint16* pixel __asm("a0"), const VertexLink* L __asm("a1"), const VertexLink* R __asm("a2"));
@@ -20,6 +21,7 @@ extern const uint8* gTile;
         void rasterizeLineH_asm(uint16* pixel __asm("a0"), const VertexLink* L __asm("a1"), const VertexLink* R __asm("a2"));
         void rasterizeLineV_asm(uint16* pixel __asm("a0"), const VertexLink* L __asm("a1"), const VertexLink* R __asm("a2"));
         void rasterizeFillS_asm(uint16* pixel __asm("a0"), const VertexLink* L __asm("a1"), const VertexLink* R __asm("a2"));
+        void rasterizeSprite_asm(uint16* pixel __asm("a0"), const VertexLink* L __asm("a1"), const VertexLink* R __asm("a2"));
     }
 
     #define rasterizeS rasterizeS_asm
@@ -29,7 +31,7 @@ extern const uint8* gTile;
     #define rasterizeGT rasterizeGT_asm
     #define rasterizeFTA rasterizeFTA_asm
     #define rasterizeGTA rasterizeGTA_asm
-    #define rasterizeSprite rasterizeSprite_c
+    #define rasterizeSprite rasterizeSprite_asm
     #define rasterizeLineH rasterizeLineH_asm
     #define rasterizeLineV rasterizeLineV_asm
     #define rasterizeFillS rasterizeFillS_asm

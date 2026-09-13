@@ -52,6 +52,10 @@ enum FaceType {
 
 extern Level level;
 
+extern uint8 ecsRemap[256];
+extern int ecsDepth;
+int bgNeedsRemap = 0;
+
 const uint8* gTile;
 
 EWRAM_DATA uint8 gBackgroundCopy[FRAME_WIDTH * FRAME_HEIGHT];   // EWRAM 37.5k
@@ -120,17 +124,18 @@ extern "C" {
 }
 
 #ifdef USE_ASM
-    #define transformRoom           transformRoom_asm
-    #define transformRoomUW         transformRoomUW_asm
-    #define transformMesh           transformMesh_asm
-    #define faceAddRoomQuads        faceAddRoomQuads_asm
-    #define faceAddRoomTriangles    faceAddRoomTriangles_asm
-    #define faceAddMeshQuads        faceAddMeshQuads_asm
-    #define faceAddMeshTriangles    faceAddMeshTriangles_asm
-    #define clearFB(fb)             clearFB_asm(fb)
-    #define drawPoly                drawPoly_asm
+    #define transformRoom transformRoom_asm
+    #define transformRoomUW transformRoomUW_asm
+    #define transformMesh transformMesh_asm
+    #define faceAddRoomQuads faceAddRoomQuads_asm
+    #define faceAddRoomTriangles faceAddRoomTriangles_asm
+    #define faceAddMeshQuads faceAddMeshQuads_asm
+    #define faceAddMeshTriangles faceAddMeshTriangles_asm
+    #define clearFB(fb) clearFB_asm(fb)
+    #define drawPoly drawPoly_asm
 
-    extern "C" {
+    extern "C"
+    {
         void transformRoom_asm(const RoomVertex* vertices __asm("a0"), int32 count __asm("d0"));
         void transformRoomUW_asm(const RoomVertex* vertices __asm("a0"), int32 count __asm("d0"));
         void transformMesh_asm(const MeshVertex* vertices __asm("a0"), int32 count __asm("d0"), int32 intensity __asm("d1"));
@@ -142,18 +147,18 @@ extern "C" {
         void drawPoly_asm(uint32 flags __asm("d0"), VertexLink* v __asm("a0"));
     }
 
-    #define rasterize               rasterize_c
+    #define rasterize rasterize_c
 #else
-    #define transformRoom           transformRoom_c
-    #define transformRoomUW         transformRoomUW_c
-    #define transformMesh           transformMesh_c
-    #define faceAddRoomQuads        faceAddRoomQuads_c
-    #define faceAddRoomTriangles    faceAddRoomTriangles_c
-    #define faceAddMeshQuads        faceAddMeshQuads_c
-    #define faceAddMeshTriangles    faceAddMeshTriangles_c
-    #define rasterize               rasterize_c
-    #define clearFB(fb)             dmaFill(fb, 0, FRAME_WIDTH * FRAME_HEIGHT)
-    #define drawPoly                drawPoly_c
+    #define transformRoom transformRoom_c
+    #define transformRoomUW transformRoomUW_c
+    #define transformMesh transformMesh_c
+    #define faceAddRoomQuads faceAddRoomQuads_c
+    #define faceAddRoomTriangles faceAddRoomTriangles_c
+    #define faceAddMeshQuads faceAddMeshQuads_c
+    #define faceAddMeshTriangles faceAddMeshTriangles_c
+    #define rasterize rasterize_c
+    #define clearFB(fb) dmaFill(fb, 0, FRAME_WIDTH * FRAME_HEIGHT)
+    #define drawPoly drawPoly_c
 #endif
 
 X_INLINE bool checkBackface(const Vertex* a, const Vertex* b, const Vertex* c)
@@ -1155,14 +1160,29 @@ void renderBar(int32 x, int32 y, int32 width, int32 value, BarType type)
 
 void renderBackground(const void* background)
 {
-    dmaCopy(background, (void*)fb, FRAME_WIDTH * FRAME_HEIGHT);
+    if (ecsDepth && bgNeedsRemap)
+    {
+        const uint8* src = (const uint8*)background;
+        uint8* dst = (uint8*)fb;
+        int32 count = FRAME_WIDTH * FRAME_HEIGHT;
+
+        while (count--)
+            *dst++ = ecsRemap[*src++];
+    }
+    else
+    {
+        dmaCopy(background, (void*)fb, FRAME_WIDTH * FRAME_HEIGHT);
+    }
 }
 
 void* copyBackground()
 {
     dmaCopy((void*)fb, gBackgroundCopy, FRAME_WIDTH * FRAME_HEIGHT);
 
-    palGrayRemap(gBackgroundCopy, FRAME_WIDTH * FRAME_HEIGHT);
+    if (!ecsDepth)
+        palGrayRemap(gBackgroundCopy, FRAME_WIDTH * FRAME_HEIGHT);
+    else
+        bgNeedsRemap = 0;
 
     return gBackgroundCopy;
 }

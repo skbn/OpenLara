@@ -1247,8 +1247,40 @@ struct Inventory
             {
                 if (passportPage == PASSPORT_PAGE_LOAD_GAME)
                 {
-                    OPTION_BTN(STR_TR1_LEVEL1, LVL_TR1_1);
-                    OPTION_BTN(STR_TR1_LEVEL2, LVL_TR1_2);
+                    // Determine the highest level reached
+                    LevelID maxLevel = osCheckSave() ? (LevelID)gSaveGame.level : gLevelID;
+
+                    if (maxLevel < LVL_TR1_1) maxLevel = LVL_TR1_1;
+
+                    // Show only playable levels up to the current one
+                    static const struct { StringID str; LevelID id; } levels[] = {
+                        { STR_TR1_LEVEL1, LVL_TR1_1 },
+                        { STR_TR1_LEVEL2, LVL_TR1_2 },
+                        { STR_TR1_LEVEL3A, LVL_TR1_3A },
+                        { STR_TR1_LEVEL3B, LVL_TR1_3B },
+                        { STR_TR1_LEVEL4, LVL_TR1_4 },
+                        { STR_TR1_LEVEL5, LVL_TR1_5 },
+                        { STR_TR1_LEVEL6, LVL_TR1_6 },
+                        { STR_TR1_LEVEL7A, LVL_TR1_7A },
+                        { STR_TR1_LEVEL7B, LVL_TR1_7B },
+                        { STR_TR1_LEVEL8A, LVL_TR1_8A },
+                        { STR_TR1_LEVEL8B, LVL_TR1_8B },
+                        { STR_TR1_LEVEL8C, LVL_TR1_8C },
+                        { STR_TR1_LEVEL10A, LVL_TR1_10A },
+                        { STR_TR1_LEVEL10B, LVL_TR1_10B },
+                        { STR_TR1_LEVEL10C, LVL_TR1_10C },
+                        { STR_TR1_EGYPT, LVL_TR1_EGYPT },
+                        { STR_TR1_CAT, LVL_TR1_CAT },
+                        { STR_TR1_END, LVL_TR1_END },
+                        { STR_TR1_END2, LVL_TR1_END2 },
+                    };
+
+                    for (int32 i = 0; i < X_COUNT(levels); i++)
+                    {
+                        if (levels[i].id > maxLevel) break;
+                        OPTION_BTN(levels[i].str, levels[i].id);
+                    }
+
                     if (osCheckSave())
                     {
                         OPTION_SPACE();

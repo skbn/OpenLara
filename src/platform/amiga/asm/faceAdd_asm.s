@@ -128,27 +128,21 @@ faceAddRoomQuads_asm:
 .rq_no_frame:
     ; backface cull (signed area)
     move.w VX_X(a2),d1
-    ext.l d1
     move.w VX_Y(a2),d2
-    ext.l d2
 
     move.w VX_X(a1),d3
-    ext.l d3
-    sub.l d1,d3
+    sub.w d1,d3
 
     move.w VX_Y(a0),d4
-    ext.l d4
-    sub.l d2,d4
-    muls.l d3,d4
+    sub.w d2,d4
+    muls.w d3,d4
 
     move.w VX_X(a0),d0
-    ext.l d0
-    sub.l d1,d0
+    sub.w d1,d0
 
     move.w VX_Y(a1),d1
-    ext.l d1
-    sub.l d2,d1
-    muls.l d0,d1
+    sub.w d2,d1
+    muls.w d0,d1
 
     cmp.l d1,d4
     ble .rq_next
@@ -285,27 +279,21 @@ faceAddRoomTriangles_asm:
 .rt_no_frame:
     ; backface cull (signed area)
     move.w VX_X(a2),d1
-    ext.l d1
     move.w VX_Y(a2),d2
-    ext.l d2
 
     move.w VX_X(a1),d3
-    ext.l d3
-    sub.l d1,d3
+    sub.w d1,d3
 
     move.w VX_Y(a0),d4
-    ext.l d4
-    sub.l d2,d4
-    muls.l d3,d4
+    sub.w d2,d4
+    muls.w d3,d4
 
     move.w VX_X(a0),d0
-    ext.l d0
-    sub.l d1,d0
+    sub.w d1,d0
 
     move.w VX_Y(a1),d1
-    ext.l d1
-    sub.l d2,d1
-    muls.l d0,d1
+    sub.w d2,d1
+    muls.w d0,d1
 
     cmp.l d1,d4
     ble .rt_next
@@ -414,27 +402,21 @@ faceAddMeshQuads_asm:
 
     ; backface cull first (mesh: no clip flags yet)
     move.w VX_X(a2),d1
-    ext.l d1
     move.w VX_Y(a2),d2
-    ext.l d2
 
     move.w VX_X(a1),d3
-    ext.l d3
-    sub.l d1,d3
+    sub.w d1,d3
 
     move.w VX_Y(a0),d4
-    ext.l d4
-    sub.l d2,d4
-    muls.l d3,d4
+    sub.w d2,d4
+    muls.w d3,d4
 
     move.w VX_X(a0),d0
-    ext.l d0
-    sub.l d1,d0
+    sub.w d1,d0
 
     move.w VX_Y(a1),d1
-    ext.l d1
-    sub.l d2,d1
-    muls.l d0,d1
+    sub.w d2,d1
+    muls.w d0,d1
 
     cmp.l d1,d4
     ble .mq_next
@@ -548,27 +530,21 @@ faceAddMeshTriangles_asm:
 
     ; backface cull first
     move.w VX_X(a2),d1
-    ext.l d1
     move.w VX_Y(a2),d2
-    ext.l d2
 
     move.w VX_X(a1),d3
-    ext.l d3
-    sub.l d1,d3
+    sub.w d1,d3
 
     move.w VX_Y(a3),d0
-    ext.l d0
-    sub.l d2,d0
-    muls.l d3,d0
+    sub.w d2,d0
+    muls.w d3,d0
 
     move.w VX_X(a3),d3
-    ext.l d3
-    sub.l d1,d3
+    sub.w d1,d3
 
     move.w VX_Y(a1),d1
-    ext.l d1
-    sub.l d2,d1
-    muls.l d3,d1
+    sub.w d2,d1
+    muls.w d3,d1
 
     cmp.l d1,d0
     ble .mt_next

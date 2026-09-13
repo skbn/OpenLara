@@ -18,8 +18,8 @@ rasterizeGT_asm:
     move.l _gTile,a4
     lea _divTable,a5
 
-    clr.l d0
-    clr.l d1
+    moveq #0,d0
+    moveq #0,d1
     clr.l 0(sp)
     clr.l 4(sp)
     clr.l 8(sp)
@@ -28,6 +28,7 @@ rasterizeGT_asm:
     clr.l 20(sp)
 
 .outer_loop:
+
 .L_advance:
     tst.l d0
     bne .L_done
@@ -49,7 +50,6 @@ rasterizeGT_asm:
     ext.l d0
 
     move.w 0(a1),d2
-    ext.l d2
 
     moveq #0,d6
     move.b 6(a1),d6
@@ -99,6 +99,7 @@ rasterizeGT_asm:
     bra .L_advance
 
 .L_done:
+
 .R_advance:
     tst.l d1
     bne .R_done
@@ -120,7 +121,6 @@ rasterizeGT_asm:
     ext.l d1
 
     move.w 0(a2),d3
-    ext.l d3
 
     moveq #0,d7
     move.b 6(a2),d7
@@ -308,9 +308,8 @@ rasterizeGT_asm:
     move.l d2,d0
     move.b d3,d0
     move.b (a3,d0.l),d3
-    move.b d3,(a6)
-    move.b d3,1(a6)
-    addq.l #2,a6
+    move.b d3,(a6)+
+    move.b d3,(a6)+
 
     add.l d5,d1
     add.l d6,d2

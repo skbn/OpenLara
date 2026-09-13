@@ -22,7 +22,6 @@ getSector_asm:
     sub.l d2,d0
     asr.l #8,d0
     asr.l #2,d0
-    tst.l d0
     blt .sx_lo
     moveq #0,d2
     move.b 20(a1),d2

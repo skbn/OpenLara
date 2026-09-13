@@ -35,7 +35,8 @@ int8 musicBuffer[2 * SND_SAMPLES] __attribute((__chip__));
     #define sndPCM_fill    sndPCM_fill_asm
     #define sndPCM_mix     sndPCM_mix_asm
 
-    extern "C" {
+    extern "C"
+    {
         void sndADPCM4_fill_asm(ADPCM4_STATE &state __asm("a0"), int8* buffer __asm("a1"), const uint8* data __asm("a2"), int32 size __asm("d0"));
         int32 sndPCM_fill_asm(int32 pos __asm("d0"), int32 inc __asm("d1"), int32 size __asm("d2"), int32 volume __asm("d3"), const uint8* data __asm("a0"), int8* buffer __asm("a1"));
         int32 sndPCM_mix_asm(int32 pos __asm("d0"), int32 inc __asm("d1"), int32 size __asm("d2"), int32 volume __asm("d3"), const uint8* data __asm("a0"), int8* buffer __asm("a1"));

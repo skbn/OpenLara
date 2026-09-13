@@ -38,8 +38,8 @@ rasterizeLineH_asm:
 
     move.b d1,(a0)+
     subq.l #1,d2
-.lh_odd_done:
 
+.lh_odd_done:
     ; Odd tail byte
     btst #0,d2
     beq .lh_tail_done
@@ -48,20 +48,30 @@ rasterizeLineH_asm:
     move.b d1,(a0,d2.l)
 
 .lh_tail_done:
-
-    ; replicate color to both bytes
+    ; replicate color to 4 bytes
     move.l d1,d0
     lsl.l #8,d0
     or.l d0,d1
+    move.l d1,d0
+    lsl.l #8,d0
+    lsl.l #8,d0
+    or.l d0,d1
 
-    ; word fill
-    lsr.l #1,d2
+    ; odd word remainder
+    btst #1,d2
+    beq .lh_no_word_rem
+    move.w d1,(a0)+
+    subq.l #2,d2
+
+.lh_no_word_rem:
+    ; long fill
+    lsr.l #2,d2
     beq .lh_done
 
     subq.l #1,d2
 
 .lh_loop:
-    move.w d1,(a0)+
+    move.l d1,(a0)+
     dbra d2,.lh_loop
 
 .lh_done:
@@ -138,7 +148,6 @@ rasterizeFillS_asm:
     move.l a0,a2
     move.l d2,d4
 
-    tst.l d4
     ble .fs_row_skip
 
     moveq #0,d5

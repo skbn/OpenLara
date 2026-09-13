@@ -28,7 +28,6 @@ transformMesh_asm:
     move.l d1,d3
     add.l _gLightAmbient,d3
     asr.l #8,d3
-    tst.l d3
     bge .mesh_clamp_hi
     moveq #0,d3
     bra .mesh_vg_done
@@ -45,70 +44,55 @@ transformMesh_asm:
 .mesh_loop:
     ; load MeshVertex x,y,z, scale by 4
     move.w (a0)+,d1
-    ext.l d1
-    asl.l #2,d1
     move.w (a0)+,d2
-    ext.l d2
-    asl.l #2,d2
     move.w (a0)+,d4
-    ext.l d4
-    asl.l #2,d4
+    moveq #14,d7
 
     ; Row 0: x' = e00*x + e01*y + e02*z + (e03 << 14)
-    ; muls.l: scaled inputs can exceed 16 bits
     move.w 0(a2),d5
-    ext.l d5
-    muls.l d1,d5
+    muls.w d1,d5
     move.w 2(a2),d6
-    ext.l d6
-    muls.l d2,d6
+    muls.w d2,d6
     add.l d6,d5
     move.w 4(a2),d6
-    ext.l d6
-    muls.l d4,d6
+    muls.w d4,d6
     add.l d6,d5
+    asl.l #2,d5
     move.w 18(a2),d6
     ext.l d6
-    asl.l #8,d6
-    asl.l #6,d6
+    asl.l d7,d6
     add.l d6,d5
     move.l d5,a5
 
     ; Row 1: y'
     move.w 6(a2),d5
-    ext.l d5
-    muls.l d1,d5
+    muls.w d1,d5
     move.w 8(a2),d6
-    ext.l d6
-    muls.l d2,d6
+    muls.w d2,d6
     add.l d6,d5
     move.w 10(a2),d6
-    ext.l d6
-    muls.l d4,d6
+    muls.w d4,d6
     add.l d6,d5
+    asl.l #2,d5
     move.w 20(a2),d6
     ext.l d6
-    asl.l #8,d6
-    asl.l #6,d6
+    asl.l d7,d6
     add.l d6,d5
     move.l d5,a6
 
     ; Row 2: z'
     move.w 12(a2),d5
-    ext.l d5
-    muls.l d1,d5
+    muls.w d1,d5
     move.w 14(a2),d6
-    ext.l d6
-    muls.l d2,d6
+    muls.w d2,d6
     add.l d6,d5
     move.w 16(a2),d6
-    ext.l d6
-    muls.l d4,d6
+    muls.w d4,d6
     add.l d6,d5
+    asl.l #2,d5
     move.w 22(a2),d6
     ext.l d6
-    asl.l #8,d6
-    asl.l #6,d6
+    asl.l d7,d6
     add.l d6,d5
 
     ; shuffle: d4=x d5=y d6=z
@@ -131,12 +115,10 @@ transformMesh_asm:
 
 .mesh_zmax_ok:
     ; reduce to 16-bit (>>14)
-    asr.l #8,d4
-    asr.l #6,d4
-    asr.l #8,d5
-    asr.l #6,d5
-    asr.l #8,d6
-    asr.l #6,d6
+    moveq #14,d1
+    asr.l d1,d4
+    asr.l d1,d5
+    asr.l d1,d6
 
     ; save z
     move.l d6,a5
@@ -150,14 +132,13 @@ transformMesh_asm:
 .mesh_dz_ok:
     moveq #0,d1
     move.w (a3,d6.l*2),d1
+    moveq #12,d6
 
     ; x = (x * d) >> 12, y = (y * d) >> 12
-    muls.l d1,d4
-    asr.l #8,d4
-    asr.l #4,d4
-    muls.l d1,d5
-    asr.l #8,d5
-    asr.l #4,d5
+    muls.w d1,d4
+    asr.l d6,d4
+    muls.w d1,d5
+    asr.l d6,d5
 
     ; center on screen
     add.l #160,d4

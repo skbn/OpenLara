@@ -34,8 +34,8 @@ rasterizeF_asm:
 
     move.l a1,a2
 
-    clr.l d0
-    clr.l d1
+    moveq #0,d0
+    moveq #0,d1
     clr.l 0(sp)
     clr.l 4(sp)
 
@@ -59,7 +59,6 @@ rasterizeF_asm:
     ext.l d0
 
     move.w 0(a1),d2
-    ext.l d2
 
     cmp.l #1,d0
     ble .L_shift
@@ -99,7 +98,6 @@ rasterizeF_asm:
     ext.l d1
 
     move.w 0(a2),d3
-    ext.l d3
 
     cmp.l #1,d1
     ble .R_shift
@@ -120,7 +118,6 @@ rasterizeF_asm:
     bra .R_advance
 
 .R_done:
-
     ; h = min(Lh, Rh)
     move.l d0,d6
     cmp.l d1,d6
@@ -140,7 +137,6 @@ rasterizeF_asm:
     move.l d6,8(sp)
 
 .scanline_loop:
-
     move.l d2,d0
     swap d0
     ext.l d0
@@ -162,7 +158,6 @@ rasterizeF_asm:
     subq.l #1,d1
 
 .odd_start_done:
-
     ; odd tail pixel
     btst #0,d1
     beq .tail_done
@@ -172,7 +167,6 @@ rasterizeF_asm:
     move.b d4,(a6,d0.l)
 
 .tail_done:
-
     lsr.l #1,d1
     beq .span_done
     subq.l #1,d1

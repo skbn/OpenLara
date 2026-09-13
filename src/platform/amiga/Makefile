@@ -1,4 +1,4 @@
-ROOTDIR = /opt/amiga
+ROOTDIR := $(abspath $(dir $(shell which vasmm68k_mot))/..)
 
 TARGET = OpenLara
 BUILD = build
@@ -18,22 +18,22 @@ CC_VER := $(shell $(CC) -dumpversion)
 INCPATH = -I. -I../../fixed
 
 CFLAGS = -m68020 -noixemul -Wall -Wstack-usage=1024 -c
-CFLAGS += -O1 -fbbb=- -fomit-frame-pointer -DNDEBUG -mno-bitfield
+CFLAGS += -O2 -fbbb=- -fomit-frame-pointer -DNDEBUG -mno-bitfield
 
 #CFLAGS += -g
 CFLAGS += -DUSE_ASM
 CFLAGS += -DUSE_MATRIX_INT16
 
 CFLAGS += -DNO_FPS_CAP
-	
+CFLAGS += -DQUANT_ASM
+
 #CFLAGS += -save-temps
 #CFLAGS += -DPROFILING
 
 CXXFLAGS = $(CFLAGS) -fno-rtti -fno-exceptions 
 LDFLAGS = -m68020 -noixemul -Wl,-Map=$(BUILD)/output.map -fno-rtti -fno-exceptions
 # -nostdlib
-ASFLAGS = -Fhunk -m68020 -quiet
-
+ASFLAGS = -quiet -I$(ROOTDIR)/m68k-amigaos/ndk-include -Fhunk -phxass -m68020 -opt-allbra -opt-brajmp -opt-clr -opt-div -opt-fconst -opt-jbra -opt-lsl -opt-movem -opt-mul -opt-nmoveq -opt-pea -opt-st -opt-speed -showcrit
 DD = dd
 RM = rm -f
 
@@ -64,6 +64,7 @@ $(BUILD):
 $(TARGET): $(OBJS)
 	$(CXX) $(LDFLAGS) $(OBJS) $(LIBS) -o $(TARGET)
 	$(STRIP) $(TARGET)
+	python3 bss2hunk.py $(TARGET)
 
 $(BUILD)/%.o: %.s | $(BUILD)
 	$(AS) $(ASFLAGS) $(INCPATH) -o $@ $<
@@ -80,9 +81,6 @@ $(BUILD)/%.o: %.cpp | $(BUILD)
 
 $(BUILD)/main.o: main.cpp | $(BUILD)
 	$(CXX) $(CFLAGS) -O0 -fno-rtti -fno-exceptions $(INCPATH) -o $@ $<
-
-$(BUILD)/render.o: render.cpp rasterizer.h | $(BUILD)
-	$(CXX) $(CXXFLAGS) $(INCPATH) -o $@ $<
 
 $(BUILD)/common.o: ../../fixed/common.cpp | $(BUILD)
 	$(CXX) $(CFLAGS) -O0 -fno-rtti -fno-exceptions $(INCPATH) -o $@ $<

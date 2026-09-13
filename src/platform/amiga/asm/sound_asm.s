@@ -72,13 +72,13 @@ sndADPCM4_fill_asm:
     asr.l #8,d0
     cmp.l #-128,d0
     bge .adpcm_clamp_hi
-    move.l #-128,d0
+    moveq #-128,d0
     bra .adpcm_clamp_done
 
 .adpcm_clamp_hi:
     cmp.l #127,d0
     ble .adpcm_clamp_done
-    move.l #127,d0
+    moveq #127,d0
 
 .adpcm_clamp_done:
     ; Amiga: SND_ENCODE is identity, write clamped value
@@ -88,7 +88,7 @@ sndADPCM4_fill_asm:
     move.l d6,d0
     and.l #15,d0
     eor.l #8,d0
-    sub.l #8,d0
+    subq.l #8,d0
 
     ; out = res*quant + (zM1 - zM2)
     move.l d0,d1
@@ -105,8 +105,8 @@ sndADPCM4_fill_asm:
     move.l d6,d0
     and.l #15,d0
     eor.l #8,d0
-    sub.l #8,d0
-    add.l #8,d0
+    subq.l #8,d0
+    addq.l #8,d0
     lea _ADPCM4_ADAPT,a3
     moveq #0,d1
     move.b (a3,d0.l),d1
@@ -156,6 +156,7 @@ sndPCM_fill_asm:
     bra .fill_full_loop
 
 .fill_vol:
+
     ; volume-scaled path
 .fill_vol_loop:
     cmp.l d4,d0
@@ -166,7 +167,7 @@ sndPCM_fill_asm:
     moveq #0,d6
     move.b (a2,d5.l),d6
     sub.l #128,d6
-    muls.l d3,d6
+    muls.w d3,d6
     asr.l #6,d6
     move.b d6,(a3)+
 
@@ -174,7 +175,6 @@ sndPCM_fill_asm:
     bra .fill_vol_loop
 
 .fill_done:
-    move.l d0,d0
     movem.l (sp)+,d2-d6/a2-a3
     rts
 
@@ -223,13 +223,13 @@ sndPCM_mix_asm:
     ; clamp to [-128,127]
     cmp.l #-128,d5
     bge .mix_full_clamp_hi
-    move.l #-128,d5
+    moveq #-128,d5
     bra .mix_full_clamp_done
 
 .mix_full_clamp_hi:
     cmp.l #127,d5
     ble .mix_full_clamp_done
-    move.l #127,d5
+    moveq #127,d5
 
 .mix_full_clamp_done:
     move.b d5,(a3)+
@@ -251,20 +251,20 @@ sndPCM_mix_asm:
     moveq #0,d1
     move.b (a2,d6.l),d1
     sub.l #128,d1
-    muls.l d3,d1
+    muls.w d3,d1
     asr.l #6,d1
     add.l d1,d5
 
     ; clamp to [-128,127]
     cmp.l #-128,d5
     bge .mix_vol_clamp_hi
-    move.l #-128,d5
+    moveq #-128,d5
     bra .mix_vol_clamp_done
 
 .mix_vol_clamp_hi:
     cmp.l #127,d5
     ble .mix_vol_clamp_done
-    move.l #127,d5
+    moveq #127,d5
 
 .mix_vol_clamp_done:
     move.b d5,(a3)+
@@ -273,6 +273,5 @@ sndPCM_mix_asm:
     bra .mix_vol_loop
 
 .mix_done:
-    move.l d0,d0
     movem.l (sp)+,d2-d6/a2-a3
     rts

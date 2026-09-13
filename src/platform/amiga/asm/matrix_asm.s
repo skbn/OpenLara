@@ -49,10 +49,12 @@
 ; copy current matrix to next slot, advance gMatrixPtr
 _matrixPush_asm:
 matrixPush_asm:
+    movem.l d2-d5,-(sp)
     move.l _gMatrixPtr,a0
     movem.l (a0)+,d0-d5
     movem.l d0-d5,(a0)
     move.l a0,_gMatrixPtr
+    movem.l (sp)+,d2-d5
     rts
 
 ; void matrixSetIdentity_asm()
@@ -61,12 +63,13 @@ _matrixSetIdentity_asm:
 matrixSetIdentity_asm:
     move.l _gMatrixPtr,a0
     move.l #$40000000,d0
+    moveq #0,d1
     move.l d0,(a0)+
-    clr.l (a0)+
+    move.l d1,(a0)+
     move.l d0,(a0)+
-    clr.l (a0)+
+    move.l d1,(a0)+
     move.l d0,(a0)+
-    clr.l (a0)
+    move.l d1,(a0)
     rts
 
 ; void matrixSetBasis_asm(Matrix &dst, const Matrix &src)
@@ -87,7 +90,7 @@ matrixLerp_asm:
     movem.l d2-d6/a2,-(sp)
     move.l _gMatrixPtr,a1
 
-    ; common ratio fast paths
+    ; fast paths for common ratios
     cmp.l #2,d1
     beq .lerp_1_2
     cmp.l #4,d1
@@ -99,9 +102,36 @@ matrixLerp_asm:
 
 ; a = b - ((b - a) >> 2)  (3/4 towards b)
 .lerp_3_4:
-    moveq #11,d6
+    moveq #2,d6
 
 .l3_loop:
+    move.w (a1),d2
+    move.w (a0)+,d3
+    ext.l d2
+    ext.l d3
+    move.l d3,d4
+    sub.l d2,d3
+    asr.l #2,d3
+    sub.l d3,d4
+    move.w d4,(a1)+
+    move.w (a1),d2
+    move.w (a0)+,d3
+    ext.l d2
+    ext.l d3
+    move.l d3,d4
+    sub.l d2,d3
+    asr.l #2,d3
+    sub.l d3,d4
+    move.w d4,(a1)+
+    move.w (a1),d2
+    move.w (a0)+,d3
+    ext.l d2
+    ext.l d3
+    move.l d3,d4
+    sub.l d2,d3
+    asr.l #2,d3
+    sub.l d3,d4
+    move.w d4,(a1)+
     move.w (a1),d2
     move.w (a0)+,d3
     ext.l d2
@@ -116,9 +146,30 @@ matrixLerp_asm:
 
 ; a = (b + a) >> 1  (midpoint)
 .lerp_1_2:
-    moveq #11,d6
+    moveq #2,d6
 
 .l12_loop:
+    move.w (a1),d2
+    move.w (a0)+,d3
+    ext.l d2
+    ext.l d3
+    add.l d3,d2
+    asr.l #1,d2
+    move.w d2,(a1)+
+    move.w (a1),d2
+    move.w (a0)+,d3
+    ext.l d2
+    ext.l d3
+    add.l d3,d2
+    asr.l #1,d2
+    move.w d2,(a1)+
+    move.w (a1),d2
+    move.w (a0)+,d3
+    ext.l d2
+    ext.l d3
+    add.l d3,d2
+    asr.l #1,d2
+    move.w d2,(a1)+
     move.w (a1),d2
     move.w (a0)+,d3
     ext.l d2
@@ -131,9 +182,33 @@ matrixLerp_asm:
 
 ; a = a + ((b - a) >> 2)  (1/4 towards b)
 .lerp_1_4:
-    moveq #11,d6
+    moveq #2,d6
 
 .l14_loop:
+    move.w (a1),d2
+    move.w (a0)+,d3
+    ext.l d2
+    ext.l d3
+    sub.l d2,d3
+    asr.l #2,d3
+    add.l d3,d2
+    move.w d2,(a1)+
+    move.w (a1),d2
+    move.w (a0)+,d3
+    ext.l d2
+    ext.l d3
+    sub.l d2,d3
+    asr.l #2,d3
+    add.l d3,d2
+    move.w d2,(a1)+
+    move.w (a1),d2
+    move.w (a0)+,d3
+    ext.l d2
+    ext.l d3
+    sub.l d2,d3
+    asr.l #2,d3
+    add.l d3,d2
+    move.w d2,(a1)+
     move.w (a1),d2
     move.w (a0)+,d3
     ext.l d2
@@ -152,7 +227,7 @@ matrixLerp_asm:
     move.w (a2,d1.w*2),d4
     muls.l d0,d4
     asr.l #8,d4
-    moveq #11,d6
+    moveq #2,d6
 
 .ls_loop:
     move.w (a1),d2
@@ -160,7 +235,34 @@ matrixLerp_asm:
     ext.l d2
     ext.l d3
     sub.l d2,d3
-    muls.l d4,d3
+    muls.w d4,d3
+    asr.l #8,d3
+    add.l d3,d2
+    move.w d2,(a1)+
+    move.w (a1),d2
+    move.w (a0)+,d3
+    ext.l d2
+    ext.l d3
+    sub.l d2,d3
+    muls.w d4,d3
+    asr.l #8,d3
+    add.l d3,d2
+    move.w d2,(a1)+
+    move.w (a1),d2
+    move.w (a0)+,d3
+    ext.l d2
+    ext.l d3
+    sub.l d2,d3
+    muls.w d4,d3
+    asr.l #8,d3
+    add.l d3,d2
+    move.w d2,(a1)+
+    move.w (a1),d2
+    move.w (a0)+,d3
+    ext.l d2
+    ext.l d3
+    sub.l d2,d3
+    muls.w d4,d3
     asr.l #8,d3
     add.l d3,d2
     move.w d2,(a1)+
@@ -172,52 +274,51 @@ matrixLerp_asm:
 
 ; dot product of 3x3 rotation with (x,y,z), >>14
 ; d0=x, d1=y, d2=z, a0=matrix
-; out: d3=tx, d4=ty, d5=tz, clobbers d7, a0 past e03
+; out: d3=tx, d4=ty, d5=tz, clobbers d6, d7, a0 past e03
 dp33_shift_helper:
+    moveq #14,d7
+
     ; Row 0
     move.w (a0)+,d3
     ext.l d3
     muls.l d0,d3
-    move.w (a0)+,d7
-    ext.l d7
-    muls.l d1,d7
-    add.l d7,d3
-    move.w (a0)+,d7
-    ext.l d7
-    muls.l d2,d7
-    add.l d7,d3
-    asr.l #8,d3
-    asr.l #6,d3
+    move.w (a0)+,d6
+    ext.l d6
+    muls.l d1,d6
+    add.l d6,d3
+    move.w (a0)+,d6
+    ext.l d6
+    muls.l d2,d6
+    add.l d6,d3
+    asr.l d7,d3
 
     ; Row 1
     move.w (a0)+,d4
     ext.l d4
     muls.l d0,d4
-    move.w (a0)+,d7
-    ext.l d7
-    muls.l d1,d7
-    add.l d7,d4
-    move.w (a0)+,d7
-    ext.l d7
-    muls.l d2,d7
-    add.l d7,d4
-    asr.l #8,d4
-    asr.l #6,d4
+    move.w (a0)+,d6
+    ext.l d6
+    muls.l d1,d6
+    add.l d6,d4
+    move.w (a0)+,d6
+    ext.l d6
+    muls.l d2,d6
+    add.l d6,d4
+    asr.l d7,d4
 
     ; Row 2
     move.w (a0)+,d5
     ext.l d5
     muls.l d0,d5
-    move.w (a0)+,d7
-    ext.l d7
-    muls.l d1,d7
-    add.l d7,d5
-    move.w (a0)+,d7
-    ext.l d7
-    muls.l d2,d7
-    add.l d7,d5
-    asr.l #8,d5
-    asr.l #6,d5
+    move.w (a0)+,d6
+    ext.l d6
+    muls.l d1,d6
+    add.l d6,d5
+    move.w (a0)+,d6
+    ext.l d6
+    muls.l d2,d6
+    add.l d6,d5
+    asr.l d7,d5
     rts
 
 ; void matrixTranslateRel_asm(int32 x, int32 y, int32 z)
@@ -225,7 +326,7 @@ dp33_shift_helper:
 ; m.e03 += DP33(x,y,z) >> 14
 _matrixTranslateRel_asm:
 matrixTranslateRel_asm:
-    movem.l d3-d5/d7,-(sp)
+    movem.l d3-d7,-(sp)
     move.l _gMatrixPtr,a0
     bsr dp33_shift_helper
 
@@ -233,7 +334,7 @@ matrixTranslateRel_asm:
     add.w d4,(a0)+
     add.w d5,(a0)
 
-    movem.l (sp)+,d3-d5/d7
+    movem.l (sp)+,d3-d7
     rts
 
 ; void matrixTranslateSet_asm(int32 x, int32 y, int32 z)
@@ -241,7 +342,7 @@ matrixTranslateRel_asm:
 ; m.e03 = DP33(x,y,z) >> 14
 _matrixTranslateSet_asm:
 matrixTranslateSet_asm:
-    movem.l d3-d5/d7,-(sp)
+    movem.l d3-d7,-(sp)
     move.l _gMatrixPtr,a0
     bsr dp33_shift_helper
 
@@ -249,7 +350,7 @@ matrixTranslateSet_asm:
     move.w d4,(a0)+
     move.w d5,(a0)
 
-    movem.l (sp)+,d3-d5/d7
+    movem.l (sp)+,d3-d7
     rts
 
 ; void matrixTranslateAbs_asm(int32 x, int32 y, int32 z)
@@ -257,7 +358,7 @@ matrixTranslateSet_asm:
 ; subtract camera pos, then m.e03 = DP33 >> 14
 _matrixTranslateAbs_asm:
 matrixTranslateAbs_asm:
-    movem.l d2-d5/d7,-(sp)
+    movem.l d2-d7,-(sp)
     sub.l _gCameraViewPos,d0
     sub.l _gCameraViewPos+4,d1
     sub.l _gCameraViewPos+8,d2
@@ -268,7 +369,7 @@ matrixTranslateAbs_asm:
     move.w d4,(a0)+
     move.w d5,(a0)
 
-    movem.l (sp)+,d2-d5/d7
+    movem.l (sp)+,d2-d7
     rts
 
 ; sincos(angle d0) -> d1=c, d2=s
@@ -280,27 +381,24 @@ sincos_helper:
     move.l _gSinCosTable(d3.l*4),d1
     move.l d1,d2
     swap d2
-    ext.l d2
-    ext.l d1
     rts
 
 ; rot_xy: a1=&x, a2=&y, d1=c, d2=s
 ; x' = (x*c - y*s) >> 14, y' = (y*c + x*s) >> 14
 rot_xy:
+    moveq #14,d6
     move.w (a1),d3
     move.w (a2),d4
     move.w d3,d5
     muls.w d1,d5
     muls.w d2,d3
-    move.w d4,d6
-    muls.w d2,d6
-    sub.l d6,d5
-    asr.l #8,d5
-    asr.l #6,d5
+    move.w d4,d7
+    muls.w d2,d7
+    sub.l d7,d5
+    asr.l d6,d5
     muls.w d1,d4
     add.l d3,d4
-    asr.l #8,d4
-    asr.l #6,d4
+    asr.l d6,d4
     move.w d5,(a1)
     move.w d4,(a2)
     rts
@@ -310,7 +408,7 @@ rot_xy:
 ; rotate cols 0,2: (e00,e02) (e10,e12) (e20,e22)
 _matrixRotateY_asm:
 matrixRotateY_asm:
-    movem.l d2-d6/a2,-(sp)
+    movem.l d2-d7/a2,-(sp)
     bsr sincos_helper
     move.l _gMatrixPtr,a0
     move.l a0,a1
@@ -322,7 +420,7 @@ matrixRotateY_asm:
     addq.l #6,a1
     addq.l #6,a2
     bsr rot_xy
-    movem.l (sp)+,d2-d6/a2
+    movem.l (sp)+,d2-d7/a2
     rts
 
 ; void matrixRotateX_asm(int32 angle)
@@ -330,7 +428,7 @@ matrixRotateY_asm:
 ; rotate cols 1,2: (e02,e01) (e12,e11) (e22,e21)
 _matrixRotateX_asm:
 matrixRotateX_asm:
-    movem.l d2-d6/a2,-(sp)
+    movem.l d2-d7/a2,-(sp)
     bsr sincos_helper
     move.l _gMatrixPtr,a0
     lea 4(a0),a1
@@ -342,7 +440,7 @@ matrixRotateX_asm:
     addq.l #6,a1
     addq.l #6,a2
     bsr rot_xy
-    movem.l (sp)+,d2-d6/a2
+    movem.l (sp)+,d2-d7/a2
     rts
 
 ; void matrixRotateZ_asm(int32 angle)
@@ -350,7 +448,7 @@ matrixRotateX_asm:
 ; rotate cols 0,1: (e01,e00) (e11,e10) (e21,e20)
 _matrixRotateZ_asm:
 matrixRotateZ_asm:
-    movem.l d2-d6/a2,-(sp)
+    movem.l d2-d7/a2,-(sp)
     bsr sincos_helper
     move.l _gMatrixPtr,a0
     lea 2(a0),a1
@@ -362,7 +460,7 @@ matrixRotateZ_asm:
     addq.l #6,a1
     addq.l #6,a2
     bsr rot_xy
-    movem.l (sp)+,d2-d6/a2
+    movem.l (sp)+,d2-d7/a2
     rts
 
 ; void matrixRotateYXZ_asm(int32 angleX, int32 angleY, int32 angleZ)
@@ -468,13 +566,14 @@ matrixFrame_asm:
 ; 90-deg Y rotation by quadrant (0=neg, 1=swap, 2=noop, 3=swap+neg)
 _matrixRotateYQ_asm:
 matrixRotateYQ_asm:
+    movem.l d2-d4,-(sp)
     cmp.l #2,d0
     beq .yq_done
 
     move.l _gMatrixPtr,a0
 
     ; q==0: negate columns 0 and 2
-    cmp.l #0,d0
+    tst.l d0
     bne .yq_not0
 
     neg.w 0(a0)
@@ -526,6 +625,7 @@ matrixRotateYQ_asm:
     move.w d3,12(a0)
 
 .yq_done:
+    movem.l (sp)+,d2-d4
     rts
 
 ; void boxTranslate_asm(AABBi &box, int32 x, int32 y, int32 z)
@@ -546,6 +646,7 @@ boxTranslate_asm:
 ; rotate X/Z bounds by 90-degree steps
 _boxRotateYQ_asm:
 boxRotateYQ_asm:
+    movem.l d2-d4,-(sp)
     cmp.l #2,d0
     beq .brq_done
 
@@ -591,6 +692,7 @@ boxRotateYQ_asm:
     move.l d3,20(a0)
 
 .brq_done:
+    movem.l (sp)+,d2-d4
     rts
 
 ; int32 sphereIsVisible_asm(int32 x, int32 y, int32 z, int32 r)
@@ -646,7 +748,6 @@ sphereIsVisible_asm:
     add.l d5,d4
 
     ; behind camera?
-    tst.l d4
     bmi .siv_notvis
 
     ; x = DP33(row0, x, y, z)
@@ -676,12 +777,10 @@ sphereIsVisible_asm:
     add.l d7,d6
 
     ; perspective divide: x,y,z >>= 14, z >>= 4
-    asr.l #8,d5
-    asr.l #6,d5
-    asr.l #8,d6
-    asr.l #6,d6
-    asr.l #8,d4
-    asr.l #6,d4
+    moveq #14,d7
+    asr.l d7,d5
+    asr.l d7,d6
+    asr.l d7,d4
     asr.l #4,d4
 
     ; clamp z to divTable range
@@ -693,19 +792,17 @@ sphereIsVisible_asm:
     ; d = 1/z
     moveq #0,d7
     move.w _divTable(d4.l*2),d7
+    moveq #12,d4
 
     ; Project x, y, and r
     muls.l d7,d5
-    asr.l #8,d5
-    asr.l #4,d5
+    asr.l d4,d5
 
     muls.l d7,d3
-    asr.l #8,d3
-    asr.l #4,d3
+    asr.l d4,d3
 
     muls.l d7,d6
-    asr.l #8,d6
-    asr.l #4,d6
+    asr.l d4,d6
 
     ; center on screen
     add.l #160,d5

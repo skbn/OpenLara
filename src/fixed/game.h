@@ -14,11 +14,6 @@ EWRAM_DATA LevelID gNextLevel = LVL_MAX;
 
 void nextLevel(LevelID next)
 {
-    if ((next == LVL_TR1_3A) && (inventory.state == INV_STATE_NONE)) // alpha version
-    {
-        inventory.open(players[0], INV_PAGE_END);
-        return;
-    }
     gNextLevel = next;
 }
 

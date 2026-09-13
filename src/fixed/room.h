@@ -190,7 +190,8 @@ void Sector::getTriggerFloorCeiling(int32 x, int32 y, int32 z, int32* floor, int
 
 #ifndef __32X__
 #if defined(__AMIGA__) && defined(USE_ASM)
-    extern "C" {
+    extern "C"
+    {
         const Sector* getSector_asm(const Room* self __asm("a0"), int32 x __asm("d0"), int32 z __asm("d1"));
     }
 

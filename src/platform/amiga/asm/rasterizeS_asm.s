@@ -19,8 +19,8 @@ rasterizeS_asm:
     lea $1A00(a3),a3
     lea _divTable,a5
 
-    clr.l d0
-    clr.l d1
+    moveq #0,d0
+    moveq #0,d1
     clr.l 0(sp)
     clr.l 4(sp)
 
@@ -44,7 +44,6 @@ rasterizeS_asm:
     ext.l d0
 
     move.w 0(a1),d2
-    ext.l d2
 
     cmp.l #1,d0
     ble .L_shift
@@ -83,7 +82,6 @@ rasterizeS_asm:
     ext.l d1
 
     move.w 0(a2),d3
-    ext.l d3
 
     cmp.l #1,d1
     ble .R_shift
@@ -103,7 +101,6 @@ rasterizeS_asm:
     bra .R_advance
 
 .R_done:
-
     ; h = min(Lh, Rh)
     move.l d0,d6
     cmp.l d1,d6
@@ -124,7 +121,6 @@ rasterizeS_asm:
     move.l d6,8(sp)
 
 .scanline_loop:
-
     move.l d2,d0
     swap d0
     ext.l d0

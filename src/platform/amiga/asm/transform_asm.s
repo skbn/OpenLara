@@ -48,7 +48,7 @@ transformRoom_asm:
 _transformRoomUW_asm:
 transformRoomUW_asm:
     movem.l d2-d7/a2-a6,-(sp)
-    sub.l #4,sp
+    subq.l #4,sp
     move.l _gVerticesBase,a1
     move.l _gMatrixPtr,a2
     lea _divTable,a3
@@ -75,7 +75,6 @@ transformRoomUW_asm:
     lea _gCaustics,a6
     move.l (a6,d1.l*4),d1
     add.l d1,d3
-    tst.l d3
     bge .uw_clamp_hi
     moveq #0,d3
     bra .uw_caustics_done
@@ -92,7 +91,7 @@ transformRoomUW_asm:
     bpl .uw_loop
 
 .uw_done:
-    add.l #4,sp
+    addq.l #4,sp
     movem.l (sp)+,d2-d7/a2-a6
     rts
 
@@ -111,6 +110,7 @@ room_dp43:
     moveq #0,d3
     move.b (a0)+,d3
     lsl.l #5,d3
+    moveq #14,d7
 
     ; Row 0: x' = (e00*x + e01*y + e02*z) << 8 + (e03 << 14)
     move.w 0(a2),d5
@@ -124,8 +124,7 @@ room_dp43:
     lsl.l #8,d5
     move.w 18(a2),d6
     ext.l d6
-    asl.l #8,d6
-    asl.l #6,d6
+    asl.l d7,d6
     add.l d6,d5
     move.l d5,a5
 
@@ -141,8 +140,7 @@ room_dp43:
     lsl.l #8,d5
     move.w 20(a2),d6
     ext.l d6
-    asl.l #8,d6
-    asl.l #6,d6
+    asl.l d7,d6
     add.l d6,d5
     move.l d5,a6
 
@@ -158,8 +156,7 @@ room_dp43:
     lsl.l #8,d5
     move.w 22(a2),d6
     ext.l d6
-    asl.l #8,d6
-    asl.l #6,d6
+    asl.l d7,d6
     add.l d6,d5
 
     ; shuffle: d4=x d5=y d6=z
@@ -189,12 +186,10 @@ room_dp43:
 ; clobbers d1, d2, d6
 room_finish:
     ; reduce to 16-bit (>>14)
-    asr.l #8,d4
-    asr.l #6,d4
-    asr.l #8,d5
-    asr.l #6,d5
-    asr.l #8,d6
-    asr.l #6,d6
+    moveq #14,d1
+    asr.l d1,d4
+    asr.l d1,d5
+    asr.l d1,d6
 
     ; fog: beyond z=8192, darken vg by (z-8192)*2, clamp 8191
     cmp.l #8192,d6
@@ -220,14 +215,13 @@ room_finish:
 .finish_dz_ok:
     moveq #0,d1
     move.w (a3,d6.l*2),d1
+    moveq #12,d6
 
     ; x = (x * d) >> 12, y = (y * d) >> 12
-    muls.l d1,d4
-    asr.l #8,d4
-    asr.l #4,d4
-    muls.l d1,d5
-    asr.l #8,d5
-    asr.l #4,d5
+    muls.w d1,d4
+    asr.l d6,d4
+    muls.w d1,d5
+    asr.l d6,d5
 
     ; center on screen
     add.l #160,d4

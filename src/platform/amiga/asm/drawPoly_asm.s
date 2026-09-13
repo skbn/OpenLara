@@ -9,7 +9,17 @@
     XDEF _drawPoly_asm
     XDEF drawPoly_asm
 
-    XREF _rasterize_c
+    XREF _fb
+    XREF _rasterizeS_asm
+    XREF _rasterizeF_asm
+    XREF _rasterizeFT_asm
+    XREF _rasterizeFTA_asm
+    XREF _rasterizeGT_asm
+    XREF _rasterizeGTA_asm
+    XREF _rasterizeSprite_asm
+    XREF _rasterizeFillS_asm
+    XREF _rasterizeLineH_asm
+    XREF _rasterizeLineV_asm
 
 ; VertexLink layout (16 bytes)
 ; Vertex v: x@0, y@2, z@4, g@6, clip@7
@@ -84,9 +94,8 @@ drawPoly_asm:
     subq.l #1,d7
 
     lea (OUT,sp),a0
-    move.l d7,d6
-    asl.l #4,d6
-    lea (a0,d6.l),a2
+    lea (a0,d7.l*8),a2
+    lea (a2,d7.l*8),a2
 
     ; degenerate if first.y == last.y
     move.w VL_Y(a0),d3
@@ -125,9 +134,8 @@ drawPoly_asm:
     cmp.l d7,d6
     bge.s .top_done
 
-    move.l d6,d3
-    asl.l #4,d3
-    lea (a0,d3.l),a5
+    lea (a0,d6.l*8),a5
+    lea (a5,d6.l*8),a5
 
     ; track lowest y as top
     move.w VL_Y(a5),d3
@@ -154,15 +162,53 @@ drawPoly_asm:
     tst.l d5
     bne.s .dp_ret
 
-    ; call rasterizer
-    movem.l d0/a3,-(sp)
-    jsr _rasterize_c
-    addq.l #8,sp
+    ; fb row pointer for top vertex
+    moveq #0,d6
+    move.w VL_Y(a3),d6
+    move.l d6,d7
+    asl.l #6,d7
+    asl.l #8,d6
+    add.l d7,d6
+    lea _fb,a0
+    add.l d6,a0
+
+    ; face type from flags
+    move.l d0,d6
+    lsr.l #7,d6
+    lsr.l #7,d6
+    and.l #15,d6
+
+    ; rasterizer arg: type 1 uses flags&0xFF, else top vertex
+    move.l a3,a2
+    cmp.l #1,d6
+    bne.s .dp_R_ok
+    move.l d0,d7
+    and.l #$FF,d7
+    move.l d7,a2
+
+.dp_R_ok:
+    move.l a3,a1
+    asl.l #2,d6
+    lea .dp_jt(pc),a3
+    move.l (a3,d6.l),a3
+    jsr (a3)
 
 .dp_ret:
     lea (FRAMESZ,sp),sp
     movem.l (sp)+,d2-d7/a2-a6
     rts
+
+.dp_jt:
+    dc.l _rasterizeS_asm
+    dc.l _rasterizeF_asm
+    dc.l _rasterizeFT_asm
+    dc.l _rasterizeFTA_asm
+    dc.l _rasterizeGT_asm
+    dc.l _rasterizeGTA_asm
+    dc.l _rasterizeSprite_asm
+    dc.l _rasterizeFillS_asm
+    dc.l _rasterizeLineH_asm
+    dc.l _rasterizeLineV_asm
 
 
 ; Clip polygon against one axis, a6 = word offset (0=x, 2=y)
@@ -178,9 +224,8 @@ drawPoly_asm:
 
 .cp_loop:
     move.l a5,a3
-    move.l d6,d5
-    asl.l #4,d5
-    lea (a0,d5.l),a5
+    lea (a0,d6.l*8),a5
+    lea (a5,d6.l*8),a5
 
     ; classify a against clip window
     move.w (a3,a6.l),d5
@@ -215,9 +260,8 @@ drawPoly_asm:
     cmp.w d4,d5
     bgt.s .cp_b_above
 
-    move.l d1,d5
-    asl.l #4,d5
-    lea (a4,d5.l),a2
+    lea (a4,d1.l*8),a2
+    lea (a2,d1.l*8),a2
     move.l (a5),(a2)
     move.l 4(a5),4(a2)
     move.l 8(a5),8(a2)
@@ -248,9 +292,8 @@ drawPoly_asm:
     move.l d7,D7_SAVE(sp)
 
     ; reserve slot for new vertex
-    move.l d1,d5
-    asl.l #4,d5
-    lea (a4,d5.l),a2
+    lea (a4,d1.l*8),a2
+    lea (a2,d1.l*8),a2
     addq.l #1,d1
 
     ; ta=(edge-b)<<6, tb=a-b, along clip axis
@@ -286,35 +329,35 @@ drawPoly_asm:
     move.w d2,(a2,d7.l)
 
     ; Interpolate g by t
-    clr.l d2
+    moveq #0,d2
     move.b VL_G(a3),d2
-    clr.l d7
+    moveq #0,d7
     move.b VL_G(a5),d7
     sub.l d7,d2
     move.l T_SAVE(sp),d5
-    muls.l d5,d2
+    muls.w d5,d2
     asr.l #LSHIFT,d2
     add.l d7,d2
     move.b d2,VL_G(a2)
 
     ; Interpolate u by t
-    clr.l d2
+    moveq #0,d2
     move.w VL_U(a3),d2
-    clr.l d7
+    moveq #0,d7
     move.w VL_U(a5),d7
     sub.l d7,d2
-    muls.l d5,d2
+    muls.w d5,d2
     asr.l #LSHIFT,d2
     add.l d7,d2
     move.w d2,VL_U(a2)
 
     ; Interpolate v by t
-    clr.l d2
+    moveq #0,d2
     move.w VL_V(a3),d2
-    clr.l d7
+    moveq #0,d7
     move.w VL_V(a5),d7
     sub.l d7,d2
-    muls.l d5,d2
+    muls.w d5,d2
     asr.l #LSHIFT,d2
     add.l d7,d2
     move.w d2,VL_V(a2)

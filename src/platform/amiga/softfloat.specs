@@ -1,0 +1,189 @@
+*asm:
+--traditional-format %(asm_cpu) %(asm_cpu_default) %{msmall-code:-sc} 
+
+*asm_debug:
+%{g*:%{!g0:--gstabs}} %{fdebug-prefix-map=*:--debug-prefix-map %*}
+
+*asm_final:
+%{gsplit-dwarf: 
+       objcopy --extract-dwo 	 %{c:%{o*:%*}%{!o*:%b%O}}%{!c:%U%O} 	 %{c:%{o*:%:replace-extension(%{o*:%*} .dwo)}%{!o*:%b.dwo}}%{!c:%b.dwo} 
+       objcopy --strip-dwo 	 %{c:%{o*:%*}%{!o*:%b%O}}%{!c:%U%O}     }
+
+*asm_options:
+%{-target-help:%:print-asm-header()}  %{gz*:%e-gz is not supported in this configuration} %a %Y %{c:%W{o*}%{!o*:-o %w%b%O}}%{!c:-o %d%w%u%O}
+
+*invoke_as:
+%{!fwpa*:   %{fcompare-debug=*|fdump-final-insns=*:%:compare-debug-dump-opt()}   %{!S:-o %|.s |
+ as %(asm_options) %m.s %A }  }
+
+*cpp:
+%{!m68881:%{mhard-float:-D__HAVE_68881__}} %{m68881:-D__HAVE_68881__} %{!ansi:%{m68020:-Dmc68020} %{mc68020:-Dmc68020} %{m68020-40:-Dmc68020} %{m68020-60:-Dmc68020} %{m68030:-Dmc68030} %{m68040:-Dmc68040} %{m68060:-Dmc68060}} %{m68020:-D__mc68020__ -D__mc68020} %{mc68020:-D__mc68020__ -D__mc68020} %{m68020-40:-D__mc68020__ -D__mc68020} %{m68020-60:-D__mc68020__ -D__mc68020} %{m68030:-D__mc68030__ -D__mc68030} %{m68040:-D__mc68040__ -D__mc68040} %{m68060:-D__mc68060__ -D__mc68060} -isystem %:sdk_root(../include) %{mcrt=nix13:-isystem %:sdk_root(ndk13-include)} %{noixemul:%(cpp_libnix)} %{mcrt=nix*:%(cpp_libnix)} %{mcrt=ixemul:%(cpp_ixemul)} %{mcrt=clib2:%(cpp_clib2)}
+
+*cpp_options:
+%(cpp_unique_options) %1 %{m*} %{std*&ansi&trigraphs} %{W*&pedantic*} %{w} %{f*} %{g*:%{!g0:%{g*} %{!fno-working-directory:-fworking-directory}}} %{O*} %{undef} %{save-temps*:-fpch-preprocess}
+
+*cpp_debug_options:
+%{d*}
+
+*cpp_unique_options:
+%{!Q:-quiet} %{nostdinc*} %{C} %{CC} %{v} %{I*&F*} %{P} %I %{MD:-MD %{!o:%b.d}%{o*:%.d%*}} %{MMD:-MMD %{!o:%b.d}%{o*:%.d%*}} %{M} %{MM} %{MF*} %{MG} %{MP} %{MQ*} %{MT*} %{!E:%{!M:%{!MM:%{!MT:%{!MQ:%{MD|MMD:%{o*:-MQ %*}}}}}}} %{remap} %{g3|ggdb3|gstabs3|gcoff3|gxcoff3|gvms3:-dD} %{!iplugindir*:%{fplugin*:%:find-plugindir()}} %{H} %C %{D*&U*&A*} %{i*} %Z %i %{E|M|MM:%W{o*}}
+
+*trad_capable_cpp:
+cc1 -E %{traditional|traditional-cpp:-traditional-cpp}
+
+*cc1:
+%{resident:-fbaserel} %{resident32:-fbaserel32} %{msmall-code:-fno-function-cse}
+
+*cc1_options:
+%{pg:%{fomit-frame-pointer:%e-pg and -fomit-frame-pointer are incompatible}} %{!iplugindir*:%{fplugin*:%:find-plugindir()}} %1 %{!Q:-quiet} %{!dumpbase:-dumpbase %B} %{d*} %{m*} %{aux-info*} %{fcompare-debug-second:%:compare-debug-auxbase-opt(%b)}  %{!fcompare-debug-second:%{c|S:%{o*:-auxbase-strip %*}%{!o*:-auxbase %b}}}%{!c:%{!S:-auxbase %b}}  %{g*} %{O*} %{W*&pedantic*} %{w} %{std*&ansi&trigraphs} %{v:-version} %{pg:-p} %{p} %{f*} %{undef} %{Qn:-fno-ident} %{Qy:} %{-help:--help} %{-target-help:--target-help} %{-version:--version} %{-help=*:--help=%*} %{!fsyntax-only:%{S:%W{o*}%{!o*:-o %b.s}}} %{fsyntax-only:-o %j} %{-param*} %{coverage:-fprofile-arcs -ftest-coverage}
+
+*cc1plus:
+
+
+*link_gcc_c_sequence:
+%G %L %G
+
+*link_ssp:
+%{fstack-protector|fstack-protector-all|fstack-protector-strong|fstack-protector-explicit:-lssp_nonshared -lssp}
+
+*endfile:
+
+
+*link:
+-L%:sdk_root(../lib) %{fexceptions:-u___init_eh } %{noixemul:%(link_libnix)} %{mcrt=nix*:%(link_libnix)} %{mcrt=ixemul:%(link_ixemul)} %{mcrt=clib2:%(link_clib2)} %{shared:-shared -m amiga_bss -amiga-datadata-reloc -fl libb} %{fbaserel:%{!resident:-m amiga_bss -fl libb}} %{resident:-m amiga_bss -amiga-datadata-reloc -fl libb} %{fbaserel32:%{!resident32:-m amiga_bss -fl libb32}} %{resident32:-m amiga_bss -amiga-datadata-reloc -fl libb32} %{g:-amiga-debug-hunk} %(link_cpu) 
+
+*lib:
+-( %{noixemul:%(lib_libnix)} %{mcrt=nix*:%(lib_libnix)} %{mcrt=ixemul:%(lib_ixemul)} %{mcrt=clib2:%(lib_clib2)} %{!mcrt=*:%{!noixemul:%(lib_newlib)}} -lamiga -lgcc %{pthread:-lpthread} %{lpthread:-lpthread } %{lm:-lm -l__m__ } -) 
+
+*link_gomp:
+
+
+*libgcc:
+
+
+*startfile:
+%{noixemul:%(startfile_libnix)} %{mcrt=nix*:%(startfile_libnix)} %{mcrt=ixemul:%(startfile_ixemul)} %{mcrt=clib2:%(startfile_clib2)} %{!mcrt=*:%{!noixemul:%(startfile_newlib)}} 
+
+*cross_compile:
+1
+
+*version:
+6.5.0b
+
+*multilib:
+. !fbaserel !fbaserel32 !mcpu=68020 !m68881;libb fbaserel !fbaserel32 !mcpu=68020 !m68881;libm020 !fbaserel !fbaserel32 mcpu=68020 !m68881;libm020/libm881 !fbaserel !fbaserel32 mcpu=68020 m68881;libb/libm020 fbaserel !fbaserel32 mcpu=68020 !m68881;libb/libm020/libm881 fbaserel !fbaserel32 mcpu=68020 m68881;libb32/libm020 !fbaserel fbaserel32 mcpu=68020 !m68881;libb32/libm020/libm881 !fbaserel fbaserel32 mcpu=68020 m68881;
+
+*multilib_defaults:
+
+
+*multilib_extra:
+
+
+*multilib_matches:
+fbaserel fbaserel;fbaserel32 fbaserel32;mcpu=68020 mcpu=68020;m68881 m68881;
+
+*multilib_exclusions:
+
+
+*multilib_options:
+fbaserel/fbaserel32 mcpu=68020 m68881
+
+*multilib_reuse:
+
+
+*linker:
+collect2
+
+*linker_plugin_file:
+
+
+*lto_wrapper:
+
+
+*lto_gcc:
+
+
+*post_link:
+
+
+*link_libgcc:
+%D
+
+*md_exec_prefix:
+
+
+*md_startfile_prefix:
+
+
+*md_startfile_prefix_1:
+
+
+*startfile_prefix_spec:
+
+
+*sysroot_spec:
+--sysroot=%R
+
+*sysroot_suffix_spec:
+
+
+*sysroot_hdrs_suffix_spec:
+
+
+*self_spec:
+%{noixemul:-B %:sdk_root(libnix/lib/)} %{mcrt=nix*:-B %:sdk_root(libnix/lib/)} %{mcrt=ixemul:-B %:sdk_root(ixemul/lib/)} %{mcrt=clib2:-B %:sdk_root(clib2/lib/)} 
+
+*asm_cpu:
+%{mcpu=*:-m%*} %{m68000|mc68000:-m68010} %{m6802*|mc68020:-m68020} %{m68030} %{m68040} %{m68060}
+
+*asm_cpu_default:
+%{!m680*:%{!mc680*:%{!mcpu=*:-m68000}}}
+
+*link_cpu:
+%{m6802*|mc6802*|m6803*|m6804*|m6806*|m6808*|mcpu=6802*|mcpu=6803*|mcpu=6804*|mcpu=6806*|mcpu=6808*:-fl libm020} %{mhard-float|m68881|mcpu=6804*|mcpu=6806*|mcpu=6808*:%{!msoft-float:-fl libm881}}
+
+*cpp_ixemul:
+-isystem %:sdk_root(ixemul/include) %{!ansi:-Dixemul} -D__ixemul__ -D__ixemul %{malways-restore-a4:-Derrno=(*ixemul_errno)} %{mrestore-a4:-Derrno=(*ixemul_errno)}
+
+*cpp_libnix:
+-isystem %:sdk_root(libnix/include) %{!ansi:-Dlibnix} -D__libnix__ -D__libnix %{mcrt=nix13:-D__KICK13__}
+
+*cpp_clib2:
+-isystem %:sdk_root(clib2/include) %{!ansi:-DCLIB2} -D__CLIB2__ -D__CLIB2
+
+*lib_ixemul:
+%{!p:%{!pg:-lc}} %{p:-lc_p} %{pg:-lc_p}
+
+*lib_newlib:
+-lc -lstubs 
+
+*lib_libnix:
+%{mcrt=*:-l%*} %{!mcrt=*:-lnix20} -lnixmain -lnix -lstubs %{mstackcheck:-lstack} %{mstackextend:-lstack}
+
+*lib_clib2:
+-lc -ldebug %{mstackcheck:-lstack} %{mstackextend:-lstack}
+
+*link_ixemul:
+-L%:sdk_root(ixemul/lib)
+
+*link_libnix:
+-L%:sdk_root(libnix/lib)
+
+*link_clib2:
+-L%:sdk_root(clib2/lib)
+
+*startfile_ixemul:
+%{fbaserel:%{!resident:bcrt0.o%s}}%{resident:rcrt0.o%s}%{fbaserel32:%{!resident32:lcrt0.o%s}}%{resident32:scrt0.o%s}%{!resident:%{!fbaserel:%{!resident32:%{!fbaserel32:%{pg:gcrt0.o%s}%{!pg:%{p:mcrt0.o%s}%{!p:crt0.o%s}}}}}}
+
+*startfile_libnix:
+%{shared:init_shared.o%s}%{!shared:%{ramiga-*:%{ramiga-lib: %{!fbaserel:libinit.o%s}%{fbaserel:libinitb.o%s}}%{ramiga-libr:libinitr.o%s}%{ramiga-dev:devinit.o%s}}%{!ramiga-*:%{resident32:nlrcrt0.o%s}%{!resident32:%{fbaserel32:nlbcrt0.o%s}%{!fbaserel32:%{!mcpu=68000:%{!mcpu=68010:%{!m68881:-u___cpucheck }%{m68881:-u___fpucheck }}} %{resident:nrcrt0.o%s}%{!resident:%{fbaserel:nbcrt0.o%s}%{!fbaserel:ncrt0.o%s}}}}}}
+
+*startfile_clib2:
+%{resident32:nr32crt0.o%s}%{!resident32:%{fbaserel32:nb32crt0.o%s}%{!fbaserel32:%{resident:nrcrt0.o%s}%{!resident:%{fbaserel:nbcrt0.o%s}%{!fbaserel:ncrt0.o%s}}}}
+
+*startfile_newlib:
+crt0.o%s 
+
+*link_command:
+%{!fsyntax-only:%{!c:%{!M:%{!MM:%{!E:%{!S:%(linker) %l %X %{o*} %{A} %{d} %{e*} %{m} %{N} %{n} %{r} %{s} %{t} %{u*} %{x} %{z} %{Z} %{!A:%{!nostdlib:%{!nostartfiles:%S}}} %{static:} %{L*} %F -L%:sdk_root(lib/) -L%:sdk_root(../lib/) %o %{!nostdlib:%{!nodefaultlibs:%L}} %{!A:%{!nostdlib:%{!nostartfiles:%E}}} %{!nostdlib:%{!nodefaultlibs:%G}} %{flto} %{T*} }}}}}} 
+

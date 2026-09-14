@@ -12,12 +12,80 @@ QuantMethod quantMethod = QUANT_LLOYD;
 uint8 *paletteCurrent = NULL;
 uint8 *gLightmap = NULL;
 
-void ecsComputeColorWeights(const uint8 *lightmap, int16_t colorWeight[256])
-{
-    memset(colorWeight, 0, 256 * sizeof(int16_t));
+static uint32_t sourceWeight[256];
+static uint32_t outputWeight[256];
 
-    for (int i = 0; i < 256 * 32; i++)
-        colorWeight[lightmap[i]]++;
+void ecsComputeColorWeights(const uint8 *lightmap, const uint8 *tiles, int tilesCount, int16_t colorWeight[256])
+{
+    int tile;
+    int pixel;
+    int color;
+    int shade;
+    int shift;
+    uint32_t maxWeight;
+    uint32_t totalWeight;
+    uint32_t divisor;
+    uint32_t weight;
+
+    memset(sourceWeight, 0, sizeof(sourceWeight));
+
+    for (tile = 0; tile < tilesCount; tile++)
+    {
+        for (pixel = 0; pixel < 256 * 256; pixel++)
+            sourceWeight[*tiles++]++;
+    }
+
+    maxWeight = 0;
+
+    for (color = 0; color < 256; color++)
+    {
+        if (sourceWeight[color] > maxWeight)
+            maxWeight = sourceWeight[color];
+    }
+
+    shift = 0;
+
+    while (maxWeight > 1024)
+    {
+        maxWeight >>= 1;
+        shift++;
+    }
+
+    for (color = 0; color < 256; color++)
+    {
+        sourceWeight[color] >>= shift;
+
+        if (sourceWeight[color] == 0)
+            sourceWeight[color] = 1;
+    }
+
+    memset(outputWeight, 0, sizeof(outputWeight));
+
+    for (shade = 0; shade < 32; shade++)
+    {
+        for (color = 0; color < 256; color++)
+            outputWeight[lightmap[(shade << 8) | color]] += sourceWeight[color];
+    }
+
+    totalWeight = 0;
+
+    for (color = 0; color < 256; color++)
+        totalWeight += outputWeight[color];
+
+    divisor = (totalWeight + 16383) / 16384;
+
+    if (divisor == 0)
+        divisor = 1;
+
+    for (color = 0; color < 256; color++)
+    {
+        weight = outputWeight[color] / divisor;
+
+        if (weight == 0 && outputWeight[color] != 0)
+            weight = 1;
+
+        colorWeight[color] = weight;
+    }
 }
 
 void ecsBuildRemap_c(const uint8 *palette, uint8 *remap)

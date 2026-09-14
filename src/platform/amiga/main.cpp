@@ -221,8 +221,6 @@ static void parseTooltypes(void)
                     quantMethod = QUANT_LLOYD3D;
                 else if (!strcasecmp(value, "WU"))
                     quantMethod = QUANT_WU;
-                else if (!strcasecmp(value, "MEDIAN"))
-                    quantMethod = QUANT_MEDIAN;
             }
         }
 
@@ -587,12 +585,10 @@ void updatePaletteNow()
             lightmapNeedsSave = 0;
         }
 
-        ecsComputeColorWeights(origLightmap, colorWeight);
+        ecsComputeColorWeights(origLightmap, level.tiles, level.tilesCount, colorWeight);
 
         if (quantMethod == QUANT_WU)
             ecsWuQuant(paletteCurrent, colorWeight, ecsPalette);
-        else if (quantMethod == QUANT_MEDIAN)
-            ecsMedianQuant(paletteCurrent, colorWeight, ecsPalette);
         else if (quantMethod == QUANT_LLOYD3D)
             ecsLloyd3DQuant(paletteCurrent, colorWeight, ecsPalette);
         else

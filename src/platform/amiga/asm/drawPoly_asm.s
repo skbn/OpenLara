@@ -216,6 +216,7 @@ drawPoly_asm:
 .clip_xy:
     ; start from last vertex, each edge is (prev, current)
     move.l d2,d7
+    beq .cp_done
     subq.l #1,d7
     asl.l #4,d7
     lea (a0,d7.l),a5
@@ -282,6 +283,8 @@ drawPoly_asm:
     addq.l #1,d6
     subq.l #1,d7
     bne.s .cp_loop
+    
+.cp_done:
     rts
 
 

@@ -10,8 +10,7 @@ enum QuantMethod
 {
     QUANT_LLOYD,
     QUANT_LLOYD3D,
-    QUANT_WU,
-    QUANT_MEDIAN
+    QUANT_WU
 };
 
 extern UWORD ecsPalette[64];
@@ -38,14 +37,13 @@ extern uint8 *gLightmap;
     #define ecsRemapLightmap ecsRemapLightmap_c
 #endif
 
-void ecsComputeColorWeights(const uint8 *lightmap, int16_t colorWeight[256]);
+void ecsComputeColorWeights(const uint8 *lightmap, const uint8 *tiles, int tilesCount, int16_t colorWeight[256]);
 
 void ecsBuildRemap_c(const uint8 *palette, uint8 *remap);
 void ecsRemapLightmap_c(uint8 depth, const uint8 *orig, uint8 *lightmap, const uint8 *remap);
 
 void ecsLloydQuant(const uint8 *palette, const int16_t *colorWeight, UWORD *outPalette);
 void ecsLloyd3DQuant(const uint8 *palette, const int16_t *colorWeight, UWORD *outPalette);
-void ecsMedianQuant(const uint8 *palette, const int16_t *colorWeight, UWORD *outPalette);
 void ecsWuQuant(const uint8 *palette, const int16_t *colorWeight, UWORD *outPalette);
 
 #endif

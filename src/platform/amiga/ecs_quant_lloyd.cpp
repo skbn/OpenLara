@@ -138,13 +138,14 @@ void ecsLloydQuant(const uint8 *palette, const int16_t *colorWeight, UWORD *outP
         int sG;
         int nB;
         int sB;
-    } cfg[2] =
+    } cfg[3] =
     {
+        {2, 3, 4, 1, 2, 0}, // 16 colors: 2x4x2
         {4, 3, 4, 1, 2, 0}, // 32 colors: 4x4x2
         {4, 4, 8, 1, 2, 0}, // 64 colors: 4x8x2
     };
 
-    const int ci = (numColors == 32) ? 0 : 1;
+    const int ci = (numColors == 16) ? 0 : (numColors == 32) ? 1 : 2;
     uint8 optR[8];
     uint8 optG[8];
     uint8 optB[2];

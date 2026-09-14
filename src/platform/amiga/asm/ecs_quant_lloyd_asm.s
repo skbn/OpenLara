@@ -131,7 +131,7 @@ CWB = 12
 CRB = 16
 CGB = 20
 CBB = 24
-NC = 28
+NCOL = 28
 WSP = 32
 ITER = 36
 CNT = 38
@@ -149,7 +149,7 @@ lloyd3DRefine_asm:
     move.l a3,CWB(sp)
     move.l a4,CRB(sp)
     move.l a6,CBB(sp)
-    move.l d0,NC(sp)
+    move.l d0,NCOL(sp)
 
     ; 8 refinement passes
     move.w #7,ITER(sp)
@@ -165,7 +165,7 @@ lloyd3DRefine_asm:
     move.l B5B(sp),a2
     move.l CWB(sp),a3
 
-    move.l NC(sp),d7
+    move.l NCOL(sp),d7
     beq .l3d_zero_done
     subq.l #1,d7
 
@@ -237,7 +237,7 @@ lloyd3DRefine_asm:
 
 .l3d_no_better:
     addq.l #1,d5
-    cmp.l NC(sp),d5
+    cmp.l NCOL(sp),d5
     blt .l3d_inner
 
     ; accumulate weighted sums and counts
@@ -265,7 +265,7 @@ lloyd3DRefine_asm:
     bpl .l3d_outer
 
     ; recompute centroids
-    move.l NC(sp),d6
+    move.l NCOL(sp),d6
     beq .l3d_update_done
     moveq #0,d5
     lea l3d_cw,a0

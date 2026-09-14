@@ -31,7 +31,7 @@ scaleNearest2x_asm:
     ; a4 = row0, a3 = row1, 4 src px per pass
     move.l a1,a4
     lea (a1,d0.l),a3
-    move.w #FW/4-1,d6
+    moveq #FW/4-1,d6
 
 .sn_col4:
     ; w0 = p0|p0|p1|p1
@@ -102,8 +102,10 @@ scale2x_asm:
 .s2_dn_ok:
     move.l a1,a4
     lea (a1,d7.l),a5
+
     ; prevE = rowMid[0], serves as left neighbour for x=0
     move.b (a0),d1
+
     ; inner loop runs x=0..FW-2, last column is peeled so f needs no clamp
     move.w #FW-2,d6
 

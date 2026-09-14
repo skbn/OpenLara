@@ -116,12 +116,17 @@ lloydMax_asm:
     movem.l (sp)+,d2-d7/a2-a6
     rts
 
+
+; void lloyd3DRefine_asm(const uint8 *r5, const uint8 *g5, const uint8 *b5, const int16_t *cw, int32_t *cr, int32_t *cg, int32_t *cb, int nColors)
+; a0=r5, a1=g5, a2=b5, a3=cw, a4=cr, a6=cb, d0=nColors, 4(sp)=cg
+
     section .bss,bss
 
 l3d_csumR: ds.l 64
 l3d_csumG: ds.l 64
 l3d_csumB: ds.l 64
 l3d_cw: ds.l 64
+
     section .text,code
 
 R5B = 0

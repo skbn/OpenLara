@@ -97,6 +97,7 @@ ecsBuildRemap_asm:
     moveq #0,d2
     move.b (a5)+,d2
 
+    ; bestDist=MAX, best=0
     move.l #$7FFFFFFF,d3
     moveq #0,d4
     move.l a6,a2
@@ -113,6 +114,7 @@ ecsBuildRemap_asm:
     muls.w d7,d7
     muls.w #30,d7
 
+    ; dg*dg*59
     moveq #0,d6
     move.b 64(a2),d6
     sub.l d1,d6
@@ -120,6 +122,7 @@ ecsBuildRemap_asm:
     muls.w #59,d6
     add.l d6,d7
 
+    ; db*db*11
     moveq #0,d6
     move.b 128(a2),d6
     sub.l d2,d6
@@ -127,7 +130,7 @@ ecsBuildRemap_asm:
     muls.w #11,d6
     add.l d6,d7
 
-    ; track nearest
+    ; if (dist < bestDist) best = j
     cmp.l d3,d7
     bge .no_better
     move.l d7,d3

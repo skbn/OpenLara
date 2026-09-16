@@ -88,12 +88,21 @@ enum OptionID
 // audio
     OPT_ID_SFX = 0,
     OPT_ID_MUSIC = 1,
+    OPT_ID_SUBTITLES = 2,
+    OPT_ID_LANGUAGE = 3,
+    OPT_ID_ABACKEND = 4,
+    OPT_ID_ACHANNELS = 5,
+    OPT_ID_AFREQ = 6,
 // video
     OPT_ID_GAMMA = 0,
     OPT_ID_FPS = 1,
     OPT_ID_VSYNC = 2,
+    OPT_ID_VIDEOMODE = 3,
+    OPT_ID_VQUANT = 4,
+    OPT_ID_VIDEOMON = 5,
+    OPT_ID_VFILTER = 6,
 // passport
-    OPT_ID_OK = 5
+    OPT_ID_OK = 7
 };
 
 struct InvItem
@@ -211,19 +220,27 @@ struct Inventory
         options[optionsCount].type  = t;\
         options[optionsCount].str   = s;\
         options[optionsCount].value = v;\
+        options[optionsCount].id    = -1;\
         optionsCount++
 
     #define OPTION_SPACE()       optionsHeight +=  8; OPTION(OPT_SPACE, STR_EMPTY, 0)
     #define OPTION_BTN(s,v)      optionsHeight += 18; OPTION(OPT_BUTTON, s, v)
     #define OPTION_BAR(s,v)      optionsHeight += 18; OPTION(OPT_BAR, s, v)
     #define OPTION_SWITCH(s,v)   optionsHeight += 18; OPTION(OPT_SWITCH, s, v)
+    #define OPTION_VALUE(s,v,a,b) optionsHeight += 18; OPTION(OPT_VALUE, s, v);\
+        options[optionsCount - 1].vmin = a;\
+        options[optionsCount - 1].vmax = b
     #define OPTION_TEXT(s)       optionsHeight += 18; OPTION(OPT_TEXT, s, 0)
+    #define OPTID(i)             options[optionsCount - 1].id = i
 
     struct Option
     {
         OptionType type;
         StringID str;
         int32 value;
+        int32 vmin;
+        int32 vmax;
+        int32 id;
     };
 
     Option options[32];
@@ -805,6 +822,27 @@ struct Inventory
                 break;
             }
 
+            case OPT_VALUE:
+            {
+                if (lara->isKeyHit(IN_LEFT))
+                {
+                    opt.value--;
+
+                    if (opt.value < opt.vmin)
+                        opt.value = opt.vmax;
+                }
+
+                if (lara->isKeyHit(IN_RIGHT))
+                {
+                    opt.value++;
+                    
+                    if (opt.value > opt.vmax)
+                        opt.value = opt.vmin;
+                }
+                
+                break;
+            }
+
             default: ;
         }
     }
@@ -906,52 +944,189 @@ struct Inventory
     void onDetail()
     {
         Option &opt = options[optionIndex];
-        
-        if (optionIndex == OPT_ID_GAMMA)
+
+        if (opt.id == OPT_ID_GAMMA)
         {
             int32 gamma = opt.value >> 4;
 
             if (gSettings.video_gamma != gamma)
             {
                 gSettings.video_gamma = gamma;
+
                 palSet(level.palette, gamma << 4, gBrightness);
                 osSaveSettings();
             }
         }
 
-        if (optionIndex == OPT_ID_FPS)
+        if (opt.id == OPT_ID_FPS)
         {
             if (gSettings.video_fps != opt.value)
             {
                 gSettings.video_fps = opt.value;
+
                 osSaveSettings();
             }
         }
 
-        if (optionIndex == OPT_ID_VSYNC)
+        if (opt.id == OPT_ID_VSYNC)
         {
             if (gSettings.video_vsync != opt.value)
             {
                 gSettings.video_vsync = opt.value;
+                
                 osSaveSettings();
             }
         }
+
+#ifdef __AMIGA__
+        if (opt.id == OPT_ID_VIDEOMODE)
+        {
+            int32 mode = opt.value - STR_VMODE_16;
+
+            if (gSettings.video_mode != mode)
+            {
+                gSettings.video_mode = mode;
+
+                osSaveSettings();
+                videoReopen();
+                reinitOptions();
+            }
+        }
+
+        if (opt.id == OPT_ID_VQUANT)
+        {
+            int32 quant = opt.value - STR_VQUANT_LLOYD3D;
+
+            if (gSettings.video_quant != quant)
+            {
+                gSettings.video_quant = quant;
+
+                osSaveSettings();
+                videoRefreshPalette();
+            }
+        }
+
+        if (opt.id == OPT_ID_VIDEOMON)
+        {
+            int32 monitor = opt.value - STR_VMON_AUTO;
+
+            if (gSettings.video_monitor != monitor)
+            {
+                gSettings.video_monitor = monitor;
+
+                osSaveSettings();
+                videoReopen();
+                reinitOptions();
+            }
+        }
+
+        if (opt.id == OPT_ID_VFILTER)
+        {
+            int32 filter = opt.value - STR_VFILTER_NONE;
+
+            if (gSettings.video_filter != filter)
+            {
+                gSettings.video_filter = filter;
+                
+                osSaveSettings();
+                videoReopen();
+            }
+        }
+#endif
     }
 
     void onSound()
     {
         Option &opt = options[optionIndex];
-        
-        if ((optionIndex == OPT_ID_SFX) && (gSettings.audio_sfx != opt.value))
+        int32 lang;
+        int32 vol;
+
+        if (opt.id == OPT_ID_SFX)
         {
-            gSettings.audio_sfx = opt.value;
+            vol = opt.value >> 4;
+
+            if (gSettings.audio_sfx != vol)
+            {
+                gSettings.audio_sfx = vol;
+                osSaveSettings();
+            }
+        }
+
+        if (opt.id == OPT_ID_MUSIC)
+        {
+            vol = opt.value >> 4;
+
+            if (gSettings.audio_music != vol)
+            {
+                gSettings.audio_music = vol;
+
+                if (!vol)
+                    sndStopTrack();
+
+                osSaveSettings();
+            }
+        }
+
+#ifdef __AMIGA__
+        if (opt.id == OPT_ID_ABACKEND)
+        {
+            int32 backend = opt.value - STR_ABACK_AUTO;
+
+            if (gSettings.audio_backend != backend)
+            {
+                gSettings.audio_backend = backend;
+
+                osSaveSettings();
+                audioReinit();
+                reinitOptions();
+            }
+        }
+
+        if (opt.id == OPT_ID_ACHANNELS)
+        {
+            int32 stereo = opt.value - STR_ACH_MONO;
+
+            if (gSettings.audio_stereo != stereo)
+            {
+                gSettings.audio_stereo = stereo;
+
+                osSaveSettings();
+                audioReinit();
+            }
+        }
+
+        if (opt.id == OPT_ID_AFREQ)
+        {
+            int32 freq = opt.value - STR_AFREQ_11KHZ;
+
+            if (gSettings.audio_freq != freq)
+            {
+                gSettings.audio_freq = freq;
+                
+                osSaveSettings();
+                audioReinit();
+            }
+        }
+#endif
+
+        if ((opt.id == OPT_ID_SUBTITLES) && (gSettings.audio_subtitles != opt.value))
+        {
+            gSettings.audio_subtitles = opt.value;
+
             osSaveSettings();
         }
 
-        if ((optionIndex == OPT_ID_MUSIC) && (gSettings.audio_music != opt.value))
+        if (opt.id == OPT_ID_LANGUAGE)
         {
-            gSettings.audio_music = opt.value;
-            osSaveSettings();
+            lang = opt.value - STR_LANG_EN;
+
+            if (gSettings.audio_language != lang)
+            {
+                gSettings.audio_language = lang;
+
+                ensureLanguage(lang);
+                osSaveSettings();
+            }
         }
     }
 
@@ -1247,8 +1422,40 @@ struct Inventory
             {
                 if (passportPage == PASSPORT_PAGE_LOAD_GAME)
                 {
-                    OPTION_BTN(STR_TR1_LEVEL1, LVL_TR1_1);
-                    OPTION_BTN(STR_TR1_LEVEL2, LVL_TR1_2);
+                    // Determine the highest level reached
+                    LevelID maxLevel = osCheckSave() ? (LevelID)gSaveGame.level : gLevelID;
+
+                    if (maxLevel < LVL_TR1_1) maxLevel = LVL_TR1_1;
+
+                    // Show only playable levels up to the current one
+                    static const struct { StringID str; LevelID id; } levels[] = {
+                        { STR_TR1_LEVEL1, LVL_TR1_1 },
+                        { STR_TR1_LEVEL2, LVL_TR1_2 },
+                        { STR_TR1_LEVEL3A, LVL_TR1_3A },
+                        { STR_TR1_LEVEL3B, LVL_TR1_3B },
+                        { STR_TR1_LEVEL4, LVL_TR1_4 },
+                        { STR_TR1_LEVEL5, LVL_TR1_5 },
+                        { STR_TR1_LEVEL6, LVL_TR1_6 },
+                        { STR_TR1_LEVEL7A, LVL_TR1_7A },
+                        { STR_TR1_LEVEL7B, LVL_TR1_7B },
+                        { STR_TR1_LEVEL8A, LVL_TR1_8A },
+                        { STR_TR1_LEVEL8B, LVL_TR1_8B },
+                        { STR_TR1_LEVEL8C, LVL_TR1_8C },
+                        { STR_TR1_LEVEL10A, LVL_TR1_10A },
+                        { STR_TR1_LEVEL10B, LVL_TR1_10B },
+                        { STR_TR1_LEVEL10C, LVL_TR1_10C },
+                        { STR_TR1_EGYPT, LVL_TR1_EGYPT },
+                        { STR_TR1_CAT, LVL_TR1_CAT },
+                        { STR_TR1_END, LVL_TR1_END },
+                        { STR_TR1_END2, LVL_TR1_END2 },
+                    };
+
+                    for (int32 i = 0; i < X_COUNT(levels); i++)
+                    {
+                        if (levels[i].id > maxLevel) break;
+                        OPTION_BTN(levels[i].str, levels[i].id);
+                    }
+
                     if (osCheckSave())
                     {
                         OPTION_SPACE();
@@ -1261,20 +1468,91 @@ struct Inventory
             case SLOT_DETAIL:
             {
                 OPTION_BAR(STR_OPT_DETAIL_GAMMA, gSettings.video_gamma << 4);
+                OPTID(OPT_ID_GAMMA);
                 OPTION_SWITCH(STR_OPT_DETAIL_FPS, gSettings.video_fps);
+                OPTID(OPT_ID_FPS);
                 OPTION_SWITCH(STR_OPT_DETAIL_VSYNC, gSettings.video_vsync);
+                OPTID(OPT_ID_VSYNC);
+
+#ifdef __AMIGA__
+                {
+                    int32 maxMode;
+
+                    if (gHwRTG)
+                        maxMode = VMODE_RTG;
+                    else if (gHwChipset == CHIPSET_AGA)
+                        maxMode = VMODE_AGA;
+                    else if (gHwChipset == CHIPSET_ECS)
+                        maxMode = VMODE_64;
+                    else
+                        maxMode = VMODE_16;
+
+                    OPTION_VALUE(STR_OPT_VIDEOMODE, STR_VMODE_16 + X_MIN((int32)gSettings.video_mode, maxMode), STR_VMODE_16, STR_VMODE_16 + maxMode);
+                    OPTID(OPT_ID_VIDEOMODE);
+
+                    int32 maxMon = gHwMonitorNTSC ? VMON_NTSC : (gHwMonitorPAL ? VMON_PAL : VMON_AUTO);
+
+                    OPTION_VALUE(STR_OPT_VIDEOMON, STR_VMON_AUTO + X_MIN((int32)gSettings.video_monitor, maxMon), STR_VMON_AUTO, STR_VMON_AUTO + maxMon);
+                    OPTID(OPT_ID_VIDEOMON);
+                }
+
+                if (ecsDepth >= 4 && ecsDepth <= 6)
+                {
+                    OPTION_VALUE(STR_OPT_VIDEOQUANT, STR_VQUANT_LLOYD3D + X_MIN((int32)gSettings.video_quant, 1), STR_VQUANT_LLOYD3D, STR_VQUANT_WU);
+                    OPTID(OPT_ID_VQUANT);
+                }
+
+                if (!ecsDepth && gHwRTGActive)
+                {
+                    OPTION_VALUE(STR_OPT_DETAIL_FILTER, STR_VFILTER_NONE + X_MIN((int32)gSettings.video_filter, 1), STR_VFILTER_NONE, STR_VFILTER_NEAREST);
+                    OPTID(OPT_ID_VFILTER);
+                }
+#endif
                 break;
             }
             case SLOT_SOUND:
             {
-                OPTION_SWITCH(STR_OPT_SOUND_SFX, gSettings.audio_sfx);
-                OPTION_SWITCH(STR_OPT_SOUND_MUSIC, gSettings.audio_music);
+                OPTION_BAR(STR_OPT_SOUND_SFX, gSettings.audio_sfx << 4);
+                OPTID(OPT_ID_SFX);
+                OPTION_BAR(STR_OPT_SOUND_MUSIC, gSettings.audio_music << 4);
+                OPTID(OPT_ID_MUSIC);
+
+#ifdef __AMIGA__
+                
+                int32 maxBack = gHwAHI ? SND_BACKEND_AHI : SND_BACKEND_PAULA;
+
+                OPTION_VALUE(STR_OPT_AUDIOBACKEND, STR_ABACK_AUTO + X_MIN((int32)gSettings.audio_backend, maxBack), STR_ABACK_AUTO, STR_ABACK_AUTO + maxBack);
+                OPTID(OPT_ID_ABACKEND);
+
+                if (gSettings.audio_backend != SND_BACKEND_AHI)
+                {
+                    OPTION_VALUE(STR_OPT_AUDIOCH, STR_ACH_MONO + gSettings.audio_stereo, STR_ACH_MONO, STR_ACH_STEREO);
+                    OPTID(OPT_ID_ACHANNELS);
+                }
+                
+                int32 effBackend = gSettings.audio_backend;
+
+                if (effBackend == SND_BACKEND_AUTO)
+                    effBackend = gHwAHI ? SND_BACKEND_AHI : SND_BACKEND_PAULA;
+
+                int32 maxFreq = (effBackend == SND_BACKEND_AHI && gAhiMaxFreq >= 44100) ? 2 : 1;
+
+                OPTION_VALUE(STR_OPT_AUDIOFREQ, STR_AFREQ_11KHZ + X_MIN((int32)gSettings.audio_freq, maxFreq), STR_AFREQ_11KHZ, STR_AFREQ_11KHZ + maxFreq);
+                OPTID(OPT_ID_AFREQ);
+                
+#endif
+                OPTION_SWITCH(STR_OPT_SUBTITLES, gSettings.audio_subtitles);
+                OPTID(OPT_ID_SUBTITLES);
+                OPTION_VALUE(STR_OPT_LANGUAGE, STR_LANG_EN + gSettings.audio_language, STR_LANG_EN, STR_LANG_EN + LANG_COUNT - 1);
+                OPTID(OPT_ID_LANGUAGE);
                 break;
             }
             case SLOT_CONTROLS:
             {
                 OPTION_SWITCH(STR_OPT_CONTROLS_VIBRATION, gSettings.controls_vibration);
+                OPTID(OPT_ID_RUMBLE);
                 OPTION_SWITCH(STR_OPT_CONTROLS_SWAP, gSettings.controls_swap);
+                OPTID(OPT_ID_SWAP);
             /*
                 OPTION_SPACE();
                 OPTION_CTRL(STR_CTRL_RUN, 0);
@@ -1294,6 +1572,80 @@ struct Inventory
             }
             default: ;
         }
+
+        // fit the box width to the longest content
+        int32 need = 96;
+
+        for (int32 i = 0; i < optionsCount; i++)
+        {
+            const Option &opt = options[i];
+            int32 left = 0;
+            int32 right = 0;
+
+            switch (opt.type)
+            {
+                case OPT_BAR:
+                {
+                    left = 8 + getTextWidth(STR[opt.str]);
+                    right = 80;
+                    break;
+                }
+
+                case OPT_SWITCH:
+                {
+                    left = 8 + getTextWidth(STR[opt.str]);
+                    right = 44 + X_MAX(getTextWidth(STR[STR_ON]), getTextWidth(STR[STR_OFF])) / 2;
+                    break;
+                }
+
+                case OPT_VALUE:
+                {
+                    int32 vw = 0;
+
+                    for (int32 v = opt.vmin; v <= opt.vmax; v++)
+                    {
+                        int32 tw = getTextWidth(STR[v]);
+
+                        if (tw > vw)
+                            vw = tw;
+                    }
+
+                    left = 8 + getTextWidth(STR[opt.str]);
+                    right = 44 + vw / 2;
+                    break;
+                }
+
+                case OPT_BUTTON:
+                case OPT_TEXT:
+                {
+                    left = right = getTextWidth(STR[opt.str]) / 2;
+                    break;
+                }
+
+                default: ;
+            }
+
+            if (2 * X_MAX(left, right) + 16 > need)
+                need = 2 * X_MAX(left, right) + 16;
+        }
+
+        optionsWidth = X_MIN(need, FRAME_WIDTH - 16);
+    }
+
+    void reinitOptions()
+    {
+        int32 sel = options[optionIndex].id;
+
+        initOptions();
+
+        for (int32 i = 0; i < optionsCount; i++)
+        {
+            if (options[i].id == sel)
+            {
+                optionIndex = i;
+                break;
+            }
+        }
     }
 
     void drawOptions()
@@ -1304,9 +1656,35 @@ struct Inventory
         if (optionsCount == 0)
             return;
 
+        // scroll window keeps the selection inside a screen-fitting box
+        int32 maxRows = (FRAME_HEIGHT - 24) / 18;
+        int32 firstRow = 0;
+
+        if (optionsCount > maxRows)
+        {
+            firstRow = optionIndex - maxRows + 1;
+
+            if (firstRow < 0)
+                firstRow = 0;
+            else if (firstRow > optionsCount - maxRows)
+                firstRow = optionsCount - maxRows;
+        }
+
+        int32 rowCount = optionsCount - firstRow;
+
+        if (rowCount > maxRows)
+            rowCount = maxRows;
+
+        int32 h = 4;
+
+        for (int32 i = firstRow; i < firstRow + rowCount; i++)
+            h += (options[i].type == OPT_SPACE) ? 8 : 18;
+
         int32 w = optionsWidth;
-        int32 h = optionsHeight;
         int32 y = (FRAME_HEIGHT - h) / 2 - 12;
+
+        if (y < 2)
+            y = 2;
 
         renderFill((FRAME_WIDTH - w) / 2 + 1, y + 1, w - 2, h - 2, 25, 2);
         renderBorder((FRAME_WIDTH - w) / 2, y, w, h, 14, 10, 2);
@@ -1315,7 +1693,7 @@ struct Inventory
         h = 18;
         y += 2;
 
-        for (int32 i = 0; i < optionsCount; i++)
+        for (int32 i = firstRow; i < firstRow + rowCount; i++)
         {
             const Option &opt = options[i];
 
@@ -1353,6 +1731,8 @@ struct Inventory
 
                 case OPT_VALUE:
                 {
+                    drawText(-FRAME_WIDTH / 2 - 8, y + 16, STR[opt.str], TEXT_ALIGN_RIGHT);
+                    drawText(44, y + 16, STR[opt.value], TEXT_ALIGN_CENTER);
                     break;
                 }
 

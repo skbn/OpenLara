@@ -131,11 +131,18 @@ static const uint8 char_map[102] = {
 
 X_INLINE int32 charRemap(char c)
 {
-    if (c < 11)
-        return c + 81;
-    if (c < 16)
-        return c + 91;
-    return char_map[c - 32];
+    int32 i = uint8(c);
+
+    if (i < 11)
+        return i + 81;
+
+    if (i < 16)
+        return i + 91;
+
+    if ((i < 32) || (i >= 32 + X_COUNT(char_map)))
+        return 0;
+
+    return char_map[i - 32];
 }
 
 int32 getTextWidth(const char* text)
@@ -143,12 +150,28 @@ int32 getTextWidth(const char* text)
     int32 w = 0;
 
     char c;
+
     while ((c = *text++) != 0)
     {
-        if (c == ' ') {
+        if (c == ' ')
+        {
             w += 6;
             continue;
         }
+
+        // special char
+        if (c == '$')
+        {
+            c = *text++;
+
+            if (!c)
+                break;
+
+            w += char_width[uint8(c)] + 1;
+
+            continue;
+        }
+
         w += char_width[charRemap(c)] + 1;
     }
 
@@ -170,6 +193,7 @@ void drawText(int32 x, int32 y, const char* text, TextAlign align)
 
     int32 index;
     char c;
+    
     while ((c = *text++) != 0)
     {
         if (c == ' ') {
@@ -177,9 +201,16 @@ void drawText(int32 x, int32 y, const char* text, TextAlign align)
             continue;
         }
 
-        if (c == '$') { // special char
-            index = *text++;
-        } else {
+        // special char
+        if (c == '$')
+        {
+            index = uint8(*text++);
+
+            if (!index)
+                break;
+        }
+        else
+        {
             index = charRemap(c);
         }
 

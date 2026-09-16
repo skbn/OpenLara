@@ -54,6 +54,10 @@ void* soundPlay(int16 id, const vec3i* pos)
         return NULL;
 
     int32 volume = b->volume;
+    
+    #ifdef __AMIGA__
+        int32 pan = 0;
+    #endif
 
     if (pos)
     {
@@ -63,6 +67,10 @@ void* soundPlay(int16 id, const vec3i* pos)
             return NULL;
 
         volume -= (phd_sqrt(dot(d, d)) << 2);
+
+        #ifdef __AMIGA__
+            pan = (sin((phd_atan(d.z, d.x) - playersExtra[0].camera.angle.y)) * 45) >> 14;
+        #endif
     }
 
     if (SI_GAIN(b->flags)) {
@@ -87,7 +95,11 @@ void* soundPlay(int16 id, const vec3i* pos)
         index += (rand_draw() * SI_COUNT(b->flags)) >> 15;
     }
 
-    return sndPlaySample(index, volume, pitch, SI_MODE(b->flags));
+    #ifdef __AMIGA__
+        return sndPlaySamplePan(index, volume, pan, pitch, SI_MODE(b->flags));
+    #else
+        return sndPlaySample(index, volume, pitch, SI_MODE(b->flags));
+    #endif
 }
 
 void soundStop(int16 id)

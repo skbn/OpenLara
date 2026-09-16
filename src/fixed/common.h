@@ -159,6 +159,29 @@
         MARS_CMD_CLEAR,
         MARS_CMD_FLUSH
     };
+#elif defined(__AMIGA__)
+    #define USE_DIV_TABLE
+    #define CPU_BIG_ENDIAN
+    //#define USE_ASM
+    #define TEX_2PX
+    //#define ALIGNED_LIGHTMAP
+    //#define USE_MATRIX_INT16
+
+#if 0
+    #define MODE4 // wider FOV
+    #define FRAME_WIDTH  160
+    #define FRAME_HEIGHT 128
+#else
+    #define MODE13
+    #define FRAME_WIDTH  320
+    #define FRAME_HEIGHT 200
+#endif
+
+    #define USE_FMT     (LVL_FMT_PKD)
+
+    extern "C" __stdargs void kprintf(const char *fmt, ...);
+    extern "C" __stdargs char* itoa(int value, char *str, int base);
+
 #else
     #error unsupported platform
 #endif
@@ -188,7 +211,9 @@
 
 #include "stdio.h" // TODO_3DO armcpp bug?
 
+#if !defined(__AMIGA__)
 #include <math.h>
+#endif
 #include <limits.h>
 
 #ifndef USE_FMT
@@ -243,6 +268,13 @@
     #define VIEW_DIST (10 << 10)
 // skip collideSpheres for enemies
     #define FAST_HITMASK
+#endif
+
+#ifdef __AMIGA__
+// hide dead enemies after a while to reduce the number of polygons on the screen
+    #define HIDE_CORPSES (30*10) // 10 sec
+// replace trap flor geometry by two flat quads in the static state
+    #define LOD_TRAP_FLOOR
 #endif
 
 #ifndef NAV_STEPS
@@ -306,13 +338,13 @@ inline void* operator new(size_t, void *ptr)
     return ptr;
 }
 
-#if defined(__3DO__) || defined(__32X__)
+#if defined(__3DO__) || defined(__32X__) || defined(__AMIGA__)
 X_INLINE int32 abs(int32 x) {
     return (x >= 0) ? x : -x;
 }
 #endif
 
-#if defined(__GBA__) || defined(__NDS__) || defined(__32X__)
+#if defined(__GBA__) || defined(__NDS__) || defined(__32X__) || defined(__AMIGA__)
     #define int2str(x,str) itoa(x, str, 10)
 #elif defined(__3DO__)
     #define int2str(x,str) sprintf(str, "%d", x)
@@ -350,6 +382,8 @@ X_INLINE int32 abs(int32 x) {
     extern uint16 fb[FRAME_WIDTH * FRAME_HEIGHT];
 #elif defined(__DOS__)
     extern uint16 fb[FRAME_WIDTH * FRAME_HEIGHT];
+#elif defined(__AMIGA__)
+    extern uint8 fb[FRAME_WIDTH * FRAME_HEIGHT];
 #endif
 
 #define STATIC_MESH_FLAG_NO_COLLISION   1
@@ -421,6 +455,14 @@ extern uint8* vramPtr;
     #define SND_OUTPUT_FREQ  11025
     #define SND_SAMPLE_FREQ  11025
     #define SND_ENCODE(x)    ((x) + 128)
+    #define SND_DECODE(x)    ((x) - 128)
+    #define SND_MIN          -128
+    #define SND_MAX          127
+#elif defined(__AMIGA__)
+    #define SND_SAMPLES      1024
+    #define SND_OUTPUT_FREQ  11025
+    #define SND_SAMPLE_FREQ  22050
+    #define SND_ENCODE(x)    (x)
     #define SND_DECODE(x)    ((x) - 128)
     #define SND_MIN          -128
     #define SND_MAX          127
@@ -1741,19 +1783,60 @@ struct SaveGame
     uint16 invSlots[64];
 };
 
-#define SETTINGS_VER    3
-#define SETTINGS_SIZE   128
+#define SETTINGS_VER 7
+#define SETTINGS_SIZE 128
+
+enum
+{
+    CHIPSET_OCS = 0,
+    CHIPSET_ECS,
+    CHIPSET_AGA
+};
+
+enum
+{
+    VMODE_16 = 0,
+    VMODE_32,
+    VMODE_64,
+    VMODE_AGA,
+    VMODE_RTG,
+    VMODE_MAX
+};
+
+enum
+{
+    VMON_AUTO = 0,
+    VMON_PAL,
+    VMON_NTSC,
+    VMON_MAX
+};
+
+enum
+{
+    SND_BACKEND_AUTO = 0,
+    SND_BACKEND_PAULA,
+    SND_BACKEND_AHI
+};
 
 struct Settings
 {
     uint8 version;
     uint8 controls_vibration:1;
     uint8 controls_swap:1;
-    uint8 audio_sfx:1;
-    uint8 audio_music:1;
     uint8 video_gamma:5;
     uint8 video_fps:1;
     uint8 video_vsync:1;
+    uint8 audio_language:4;
+    uint8 audio_subtitles:1;
+    uint8 audio_sfx;
+    uint8 audio_music;
+    uint8 audio_backend;
+    uint8 audio_stereo;
+    uint8 audio_freq;
+    uint8 video_mode;
+    uint8 video_quant;
+    uint8 video_filter;
+    uint8 video_monitor;
 };
 
 #define FD_SET_END(x,end)   ((x) |= ((end) << 15))
@@ -2195,7 +2278,11 @@ struct ADPCM4_STATE
 #define STR_LANGUAGES \
       "English"       \
     , "Fran|cais"     \
-    , "Deutsch"
+    , "Deutsch"       \
+    , "Espa+nol"      \
+    , "Italiano"
+
+#define LANG_COUNT 5
 
 #define STR_SCALE "25", "50", "75", "100"
 
@@ -2231,8 +2318,8 @@ enum StringID {
     , STR_LANG_EN
     , STR_LANG_FR
     , STR_LANG_DE
-//    , STR_LANG_ES
-//    , STR_LANG_IT
+    , STR_LANG_ES
+    , STR_LANG_IT
 //    , STR_LANG_PL
 //    , STR_LANG_PT
 //    , STR_LANG_RU
@@ -2479,11 +2566,43 @@ enum StringID {
     , STR_TR3_CITY
     , STR_TR3_CHAMBER
     , STR_TR3_STPAUL
+// amiga video options
+    , STR_VMODE_16
+    , STR_VMODE_32
+    , STR_VMODE_64
+    , STR_VMODE_AGA
+    , STR_VMODE_RTG
+    , STR_VQUANT_LLOYD3D
+    , STR_VQUANT_WU
+    , STR_VFILTER_NONE
+    , STR_VFILTER_NEAREST
+// amiga monitor options
+    , STR_VMON_AUTO
+    , STR_VMON_PAL
+    , STR_VMON_NTSC
+// amiga audio options
+    , STR_ABACK_AUTO
+    , STR_ABACK_PAULA
+    , STR_ABACK_AHI
+    , STR_ACH_MONO
+    , STR_ACH_STEREO
+    , STR_AFREQ_11KHZ
+    , STR_AFREQ_22KHZ
+    , STR_AFREQ_44KHZ
+// amiga option labels
+    , STR_OPT_VIDEOMODE
+    , STR_OPT_VIDEOQUANT
+    , STR_OPT_VIDEOMON
+    , STR_OPT_AUDIOBACKEND
+    , STR_OPT_AUDIOCH
+    , STR_OPT_AUDIOFREQ
 
     , STR_MAX
 };
 
 extern const char* const* STR;
+
+void ensureLanguage(int32 lang);
 
 enum TrackID
 {
@@ -2664,23 +2783,24 @@ vec3i boxPushOut(const AABBi &a, const AABBi &b);
 #define matrixGet() *gMatrixPtr
 
 #ifdef USE_ASM
-    extern "C" {
+    extern "C"
+    {
         void matrixPush_asm();
         void matrixSetIdentity_asm();
-        void matrixSetBasis_asm(Matrix &dst, const Matrix &src);
-        void matrixLerp_asm(const Matrix &n, int32 pmul, int32 pdiv);
-        void matrixTranslateRel_asm(int32 x, int32 y, int32 z);
-        void matrixTranslateAbs_asm(int32 x, int32 y, int32 z);
-        void matrixTranslateSet_asm(int32 x, int32 y, int32 z);
-        void matrixRotateX_asm(int32 angle);
-        void matrixRotateY_asm(int32 angle);
-        void matrixRotateZ_asm(int32 angle);
-        void matrixRotateYQ_asm(int32 quadrant);
-        void matrixRotateYXZ_asm(int32 angleX, int32 angleY, int32 angleZ);
-        void matrixFrame_asm(const void* pos, const void* angles);
-        void boxTranslate_asm(AABBi &box, int32 x, int32 y, int32 z);
-        void boxRotateYQ_asm(AABBi &box, int32 quadrant);
-        int32 sphereIsVisible_asm(int32 x, int32 y, int32 z, int32 r);
+        void matrixSetBasis_asm(Matrix &dst __asm("a0"), const Matrix &src __asm("a1"));
+        void matrixLerp_asm(const Matrix &n __asm("a0"), int32 pmul __asm("d0"), int32 pdiv __asm("d1"));
+        void matrixTranslateRel_asm(int32 x __asm("d0"), int32 y __asm("d1"), int32 z __asm("d2"));
+        void matrixTranslateAbs_asm(int32 x __asm("d0"), int32 y __asm("d1"), int32 z __asm("d2"));
+        void matrixTranslateSet_asm(int32 x __asm("d0"), int32 y __asm("d1"), int32 z __asm("d2"));
+        void matrixRotateX_asm(int32 angle __asm("d0"));
+        void matrixRotateY_asm(int32 angle __asm("d0"));
+        void matrixRotateZ_asm(int32 angle __asm("d0"));
+        void matrixRotateYQ_asm(int32 quadrant __asm("d0"));
+        void matrixRotateYXZ_asm(int32 angleX __asm("d0"), int32 angleY __asm("d1"), int32 angleZ __asm("d2"));
+        void matrixFrame_asm(const void* pos __asm("a0"), const void* angles __asm("a1"));
+        void boxTranslate_asm(AABBi &box __asm("a0"), int32 x __asm("d0"), int32 y __asm("d1"), int32 z __asm("d2"));
+        void boxRotateYQ_asm(AABBi &box __asm("a0"), int32 quadrant __asm("d0"));
+        int32 sphereIsVisible_asm(int32 x __asm("d0"), int32 y __asm("d1"), int32 z __asm("d2"), int32 r __asm("d3"));
         void flush_asm();
     }
 
@@ -2807,7 +2927,7 @@ void matrixFrame_c(const void* pos, const void* angles);
 void matrixFrameLerp(const void* pos, const void* anglesA, const void* anglesB, int32 delta, int32 rate);
 void matrixSetView(const vec3i &pos, int32 angleX, int32 angleY);
 
-#if defined(__GBA__) || defined(__GBA_WIN__)
+#if defined(__GBA__) || defined(__GBA_WIN__) || defined(__AMIGA__)
 #define renderInit()
 #define renderFree()
 #define renderSwap()
@@ -2869,12 +2989,44 @@ bool gameLoad();
 
 int32 doTutorial(ItemObj* lara, int32 track);
 
+enum
+{
+    AUDIOMODE_AUTO,
+    AUDIOMODE_MONO,
+    AUDIOMODE_STEREO
+};
+
+extern int32 gAudioBackend;
+extern int32 gAudioStereo;
+extern int32 gAudioFreq;
+extern int32 sndOutputFreq;
+extern int32 sndStereo;
+
 void sndInit();
+void sndFree();
 void sndInitSamples();
 void sndFreeSamples();
 void sndFill(int8* buffer);
 void* sndPlaySample(int32 index, int32 volume, int32 pitch, int32 mode);
+void* sndPlaySamplePan(int32 index, int32 volume, int32 pan, int32 pitch, int32 mode);
 void sndPlayTrack(int32 track);
+
+#ifdef USE_SUBTITLES
+void subsShow(StringID str);
+void subsUpdate(int32 frames);
+void subsRender();
+void subsPlayTrack(int32 track);
+StringID subsGetForTrack(int32 track);
+
+#else
+
+#define subsShow(str)
+#define subsUpdate(frames)
+#define subsRender()
+#define subsPlayTrack(track) sndPlayTrack(track)
+#define subsGetForTrack(track) STR_EMPTY
+#endif
+
 bool sndTrackIsPlaying();
 void sndStopTrack();
 void sndStopSample(int32 index);
@@ -2887,6 +3039,21 @@ void updateFading(int32 frames);
 
 void dmaFill(void* dst, uint8 value, uint32 count);
 void dmaCopy(const void* src, void* dst, uint32 size);
+
+#ifdef __AMIGA__
+extern uint8 gHwChipset;
+extern uint8 gHwRTG;
+extern uint8 gHwAHI;
+extern int32 gAhiMaxFreq;
+extern uint8 gHwRTGActive;
+extern uint8 gHwMonitorPAL;
+extern uint8 gHwMonitorNTSC;
+extern uint8 ecsDepth;
+
+void videoReopen();
+void videoRefreshPalette();
+void audioReinit();
+#endif
 
 // system
 int32 osGetSystemTimeMS();
@@ -2940,7 +3107,7 @@ const void* osLoadLevel(LevelID id);
 
     extern uint32 gCounters[CNT_MAX];
     
-    #if defined(__3DO__) || defined(__32X__) // should be first, armcpp bug (#elif)
+    #if defined(__3DO__) || defined(__32X__) || defined(__AMIGA__) // should be first, armcpp bug (#elif)
         extern int32 g_timer;
 
         #define PROFILE_START() {\

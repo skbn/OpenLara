@@ -389,6 +389,36 @@ const char* const STR_EN[STR_MAX] = { ""
     , "Lost City Of Tinnos"
     , "Meteorite Cavern"
     , "All Hallows"
+// amiga video options
+    , "16"
+    , "32"
+    , "64"
+    , "AGA 256"
+    , "RTG"
+    , "Lloyd 3D"
+    , "Wu"
+    , "None"
+    , "Nearest"
+// amiga monitor options
+    , "Auto"
+    , "PAL"
+    , "NTSC"
+// amiga audio options
+    , "Auto"
+    , "Paula"
+    , "AHI"
+    , "Mono"
+    , "Stereo"
+    , "11 KHz"
+    , "22 KHz"
+    , "44 KHz"
+// amiga option labels
+    , "Video Mode"
+    , "Quantizer"
+    , "Monitor"
+    , "Audio Backend"
+    , "Channels"
+    , "Sample Rate"
 };
 
 #endif

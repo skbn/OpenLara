@@ -1,3 +1,8 @@
+# Amiga port
+This is BSzili's port, but moved to the official fork to make maintenance easier and to try to keep it up to date with the "float" version, which is the most current one
+
+Link to BSZili's fork: https://github.com/BSzili/OpenLara/tree/amiga
+
 # OpenLara
 Classic Tomb Raider open-source engine
 

@@ -26,38 +26,31 @@ struct Limit
 
 const int16 LIMIT_SWITCH[] = {
     -200, 200, 0, 0, 312, 512,
-    ANGLE(10), ANGLE(30), ANGLE(10)
-};
+    ANGLE(10), ANGLE(30), ANGLE(10)};
 
 const int16 LIMIT_SWITCH_UW[] = {
     -1024, 1024, -1024, 1024, -1024, 1024,
-    ANGLE(80), ANGLE(80), ANGLE(80)
-};
+    ANGLE(80), ANGLE(80), ANGLE(80)};
 
 const int16 LIMIT_BLOCK[] = {
     -300, 300, 0, 0, -692, -512,
-    ANGLE(10), ANGLE(30), ANGLE(10)
-};
+    ANGLE(10), ANGLE(30), ANGLE(10)};
 
 const int16 LIMIT_PICKUP[] = {
     -256, 256, -100, 100, -256, 100,
-    ANGLE(10), 0, 0
-};
+    ANGLE(10), 0, 0};
 
 const int16 LIMIT_PICKUP_UW[] = {
     -512, 512, -512, 512, -512, 512,
-    ANGLE(45), ANGLE(45), ANGLE(45)
-};
+    ANGLE(45), ANGLE(45), ANGLE(45)};
 
 const int16 LIMIT_HOLE[] = {
     -200, 200, 0, 0, 312, 512,
-    ANGLE(10), ANGLE(30), ANGLE(10)
-};
-
+    ANGLE(10), ANGLE(30), ANGLE(10)};
 
 struct Object : ItemObj
 {
-    Object(Room* room) : ItemObj(room) {}
+    Object(Room *room) : ItemObj(room) {}
 
     virtual void update()
     {
@@ -80,9 +73,9 @@ struct Object : ItemObj
         return (flags & ITEM_FLAG_REVERSE) == 0;
     }
 
-    bool checkLimit(Lara* lara, const int16* limitData)
+    bool checkLimit(Lara *lara, const int16 *limitData)
     {
-        Limit* limit = (Limit*)limitData;
+        Limit *limit = (Limit *)limitData;
 
         int16 ax = abs(lara->angle.x - angle.x);
         int16 ay = abs(lara->angle.y - angle.y);
@@ -108,7 +101,7 @@ struct Object : ItemObj
         return boxContains(limit->box, p);
     }
 
-    void collideDefault(Lara* lara, CollisionInfo* cinfo)
+    void collideDefault(Lara *lara, CollisionInfo *cinfo)
     {
         if (!updateHitMask(lara, cinfo))
             return;
@@ -120,10 +113,9 @@ struct Object : ItemObj
     }
 };
 
-
 struct SpriteEffect : ItemObj
 {
-    SpriteEffect(Room* room) : ItemObj(room)
+    SpriteEffect(Room *room) : ItemObj(room)
     {
         tick = 0;
         timer = 0;
@@ -147,7 +139,9 @@ struct SpriteEffect : ItemObj
                     remove();
                     return;
                 }
-            } else {
+            }
+            else
+            {
                 remove();
                 return;
             }
@@ -163,10 +157,9 @@ struct SpriteEffect : ItemObj
     }
 };
 
-
 struct Bubble : ItemObj
 {
-    Bubble(Room* room) : ItemObj(room)
+    Bubble(Room *room) : ItemObj(room)
     {
         soundPlay(SND_BUBBLE, &pos);
         frameIndex = rand_draw() % (-level.models[type].count);
@@ -195,7 +188,7 @@ struct Bubble : ItemObj
         pos.x += dx * 11 >> FIXED_SHIFT;
         pos.z += dz * 8 >> FIXED_SHIFT;
 
-        Room* nextRoom = room->getRoom(pos.x, pos.y, pos.z);
+        Room *nextRoom = room->getRoom(pos.x, pos.y, pos.z);
         if (nextRoom != room)
         {
             room->remove(this);
@@ -204,39 +197,36 @@ struct Bubble : ItemObj
     }
 };
 
-
 struct ViewTarget : Object
 {
-    ViewTarget(Room* room) : Object(room) {}
+    ViewTarget(Room *room) : Object(room) {}
 
     virtual void draw() {}
 };
-
 
 struct Waterfall : Object
 {
-    Waterfall(Room* room) : Object(room) {}
+    Waterfall(Room *room) : Object(room) {}
 
     virtual void draw() {}
 };
-
 
 struct LavaEmitter : Object
 {
-    LavaEmitter(Room* room) : Object(room) {}
+    LavaEmitter(Room *room) : Object(room) {}
 
     virtual void draw() {}
 };
 
-
 struct Door : Object
 {
-    enum {
+    enum
+    {
         STATE_CLOSE,
         STATE_OPEN
     };
 
-    Door(Room* room) : Object(room)
+    Door(Room *room) : Object(room)
     {
         flags |= ITEM_FLAG_COLLISION;
         action(true);
@@ -244,16 +234,25 @@ struct Door : Object
 
     virtual void update()
     {
-        if (isActive()) {
-            if (state == STATE_CLOSE) {
+        if (isActive())
+        {
+            if (state == STATE_CLOSE)
+            {
                 goalState = STATE_OPEN;
-            } else {
+            }
+            else
+            {
                 action(false);
             }
-        } else {
-            if (state == STATE_OPEN) {
+        }
+        else
+        {
+            if (state == STATE_OPEN)
+            {
                 goalState = STATE_CLOSE;
-            } else {
+            }
+            else
+            {
                 action(true);
             }
         }
@@ -261,7 +260,7 @@ struct Door : Object
         animProcess();
     }
 
-    virtual void collide(Lara* lara, CollisionInfo* cinfo)
+    virtual void collide(Lara *lara, CollisionInfo *cinfo)
     {
         // TODO door collision
         collideDefault(lara, cinfo);
@@ -278,24 +277,27 @@ struct Door : Object
         // TODO flip rooms
     }
 
-    void setDoorState(bool close, bool behind, Room* room, int32 x, int32 z)
+    void setDoorState(bool close, bool behind, Room *room, int32 x, int32 z)
     {
         room->modify(); // make room->sectors dynamic (non ROM)
 
-        Sector* sector = (Sector*)room->getSector(x, z); // now we can modify room sectors
+        Sector *sector = (Sector *)room->getSector(x, z); // now we can modify room sectors
 
-        Room* nextRoom;
+        Room *nextRoom;
 
-        if (close) {
+        if (close)
+        {
             nextRoom = sector->getNextRoom();
 
             sector->floorIndex = 0;
-            sector->boxIndex   = NO_BOX;
-            sector->roomBelow  = NO_ROOM;
-            sector->floor      = NO_FLOOR;
-            sector->roomAbove  = NO_ROOM;
-            sector->ceiling    = NO_FLOOR;
-        } else {
+            sector->boxIndex = NO_BOX;
+            sector->roomBelow = NO_ROOM;
+            sector->floor = NO_FLOOR;
+            sector->roomAbove = NO_ROOM;
+            sector->ceiling = NO_FLOOR;
+        }
+        else
+        {
             *sector = room->data.sectors[sector - room->sectors];
 
             nextRoom = sector->getNextRoom();
@@ -303,30 +305,36 @@ struct Door : Object
 
         // TODO modify level.boxes
 
-        if (!behind && nextRoom) {
+        if (!behind && nextRoom)
+        {
             setDoorState(close, true, nextRoom, pos.x, pos.z); // use sector from item pos
         }
     }
 };
 
-
 struct TrapDoor : Object
 {
-    enum {
+    enum
+    {
         STATE_CLOSE,
         STATE_OPEN
     };
 
-    TrapDoor(Room* room) : Object(room) {}
+    TrapDoor(Room *room) : Object(room) {}
 
     virtual void update()
     {
-        if (isActive()) {
-            if (state == STATE_CLOSE) {
+        if (isActive())
+        {
+            if (state == STATE_CLOSE)
+            {
                 goalState = STATE_OPEN;
             }
-        } else {
-            if (state == STATE_OPEN) {
+        }
+        else
+        {
+            if (state == STATE_OPEN)
+            {
                 goalState = STATE_CLOSE;
             }
         }
@@ -335,15 +343,15 @@ struct TrapDoor : Object
     }
 };
 
-
 struct Gears : Object
 {
-    enum {
+    enum
+    {
         STATE_STATIC,
         STATE_ROTATE
     };
 
-    Gears(Room* room) : Object(room) {}
+    Gears(Room *room) : Object(room) {}
 
     virtual void update()
     {
@@ -352,10 +360,9 @@ struct Gears : Object
     }
 };
 
-
 struct CinematicObject : Object
 {
-    CinematicObject(Room* room) : Object(room)
+    CinematicObject(Room *room) : Object(room)
     {
         angle.y = 0;
 
@@ -381,30 +388,29 @@ struct CinematicObject : Object
     }
 };
 
-
 struct Crystal : Object
 {
-    Crystal(Room* room) : Object(room)
+    Crystal(Room *room) : Object(room)
     {
         flags &= ~ITEM_FLAG_STATUS;
         flags |= ITEM_FLAG_STATUS_INVISIBLE; // disable crystals for now
     }
 
-    virtual void collide(Lara* lara, CollisionInfo* cinfo)
+    virtual void collide(Lara *lara, CollisionInfo *cinfo)
     {
         // TODO
     }
 };
 
-
 struct Switch : Object
 {
-    enum {
+    enum
+    {
         STATE_UP,
         STATE_DOWN
     };
 
-    Switch(Room* room) : Object(room) {}
+    Switch(Room *room) : Object(room) {}
 
     virtual void update()
     {
@@ -417,7 +423,7 @@ struct Switch : Object
         Object::update();
     }
 
-    virtual void collide(Lara* lara, CollisionInfo* cinfo)
+    virtual void collide(Lara *lara, CollisionInfo *cinfo)
     {
         if (lara->extraL->weaponState != WEAPON_STATE_FREE)
             return;
@@ -428,7 +434,7 @@ struct Switch : Object
         if (lara->state != Lara::STATE_STOP)
             return;
 
-        if (flags & ITEM_FLAG_STATUS)
+        if (flags & ITEM_FLAG_STATUS_ACTIVE)
             return;
 
         if (!checkLimit(lara, LIMIT_SWITCH))
@@ -456,12 +462,15 @@ struct Switch : Object
 
             if (t > 0 && state == Switch::STATE_UP)
             {
-                if (t != 1) {
+                if (t != 1)
+                {
                     t *= 30;
                 }
                 timer = t;
                 flags |= ITEM_FLAG_STATUS_ACTIVE;
-            } else {
+            }
+            else
+            {
                 deactivate();
             }
             return true;
@@ -471,12 +480,11 @@ struct Switch : Object
     }
 };
 
-
 struct SwitchWater : Switch
 {
-    SwitchWater(Room* room) : Switch(room) {}
+    SwitchWater(Room *room) : Switch(room) {}
 
-    virtual void collide(Lara* lara, CollisionInfo* cinfo)
+    virtual void collide(Lara *lara, CollisionInfo *cinfo)
     {
         if (lara->extraL->weaponState != WEAPON_STATE_FREE)
             return;
@@ -485,6 +493,9 @@ struct SwitchWater : Switch
             return;
 
         if (lara->state != Lara::STATE_UW_TREAD)
+            return;
+
+        if (flags & ITEM_FLAG_STATUS_ACTIVE)
             return;
 
         if (!checkLimit(lara, LIMIT_SWITCH_UW))
@@ -501,17 +512,16 @@ struct SwitchWater : Switch
         flags &= ~ITEM_FLAG_STATUS;
         flags |= ITEM_FLAG_STATUS_ACTIVE;
 
-        //TODO TR2+
-        //lara->weaponState = WEAPON_STATE_BUSY;
+        // TODO TR2+
+        // lara->weaponState = WEAPON_STATE_BUSY;
     }
 };
 
-
 struct Key : Object
 {
-    Key(Room* room) : Object(room) {}
+    Key(Room *room) : Object(room) {}
 
-    bool use(ItemObj* lara)
+    bool use(ItemObj *lara)
     {
         if (((flags & ITEM_FLAG_STATUS) == ITEM_FLAG_STATUS_ACTIVE) && (lara->extraL->weaponState == WEAPON_STATE_FREE)) // TODO check weapons
         {
@@ -523,10 +533,9 @@ struct Key : Object
     }
 };
 
-
 struct Pickup : Object
 {
-    Pickup(Room* room) : Object(room)
+    Pickup(Room *room) : Object(room)
     {
         frameIndex = 0;
     }
@@ -542,7 +551,7 @@ struct Pickup : Object
         return false;
     }
 
-    virtual void collide(Lara* lara, CollisionInfo* cinfo)
+    virtual void collide(Lara *lara, CollisionInfo *cinfo)
     {
         angle.y = lara->angle.y;
         angle.z = 0;
@@ -602,7 +611,7 @@ struct Pickup : Object
             else if (lara->state == Lara::STATE_UW_TREAD)
             {
                 // TODO TR2+
-                //if (lara->weaponState != WEAPON_STATE_FREE)
+                // if (lara->weaponState != WEAPON_STATE_FREE)
                 //    return;
 
                 if (!(lara->input & IN_ACTION))
@@ -614,33 +623,32 @@ struct Pickup : Object
                 lara->animSkip(Lara::STATE_PICKUP, Lara::STATE_UW_TREAD);
 
                 // TODO TR2+
-                //lara->weaponState = WEAPON_STATE_BUSY; // TODO check CMD_EMPTY event
+                // lara->weaponState = WEAPON_STATE_BUSY; // TODO check CMD_EMPTY event
             }
         }
     }
 };
 
-
-bool useSwitch(ItemObj* item, int32 timer)
+bool useSwitch(ItemObj *item, int32 timer)
 {
-    return ((Switch*)item)->use(timer);
+    return ((Switch *)item)->use(timer);
 }
 
-bool useKey(ItemObj* item, ItemObj* lara)
+bool useKey(ItemObj *item, ItemObj *lara)
 {
-    return ((Key*)item)->use(lara);
+    return ((Key *)item)->use(lara);
 }
 
-bool usePickup(ItemObj* item)
+bool usePickup(ItemObj *item)
 {
-    return ((Pickup*)item)->use();
+    return ((Pickup *)item)->use();
 }
 
 struct Hole : Object // parent class for KeyHole and PuzzleHole
 {
-    Hole(Room* room) : Object(room) {}
+    Hole(Room *room) : Object(room) {}
 
-    void apply(int32 offset, Lara* lara, Lara::State stateUse)
+    void apply(int32 offset, Lara *lara, Lara::State stateUse)
     {
         if (lara->extraL->weaponState != WEAPON_STATE_FREE)
             return;
@@ -659,11 +667,14 @@ struct Hole : Object // parent class for KeyHole and PuzzleHole
 
         if (inventory.useSlot == SLOT_MAX)
         {
-            if (inventory.numKeys > 0) {
+            if (inventory.numKeys > 0)
+            {
                 inventory.open(lara, INV_PAGE_USE, type);
                 return;
             }
-        } else {
+        }
+        else
+        {
             if (inventory.applyItem(this))
             {
                 lara->moveTo(_vec3i(0, 0, offset), this, false);
@@ -679,23 +690,21 @@ struct Hole : Object // parent class for KeyHole and PuzzleHole
     }
 };
 
-
 struct KeyHole : Hole
 {
-    KeyHole(Room* room) : Hole(room) {}
+    KeyHole(Room *room) : Hole(room) {}
 
-    virtual void collide(Lara* lara, CollisionInfo* cinfo)
+    virtual void collide(Lara *lara, CollisionInfo *cinfo)
     {
         apply(362, lara, Lara::STATE_USE_KEY);
     }
 };
 
-
 struct PuzzleHole : Hole
 {
-    PuzzleHole(Room* room) : Hole(room) {}
+    PuzzleHole(Room *room) : Hole(room) {}
 
-    virtual void collide(Lara* lara, CollisionInfo* cinfo)
+    virtual void collide(Lara *lara, CollisionInfo *cinfo)
     {
         if (lara->state == Lara::STATE_USE_PUZZLE)
         {
@@ -705,11 +714,20 @@ struct PuzzleHole : Hole
             if (!lara->animIsEnd(28))
                 return;
 
-            switch (type) {
-                case ITEM_PUZZLEHOLE_1 : type = ITEM_PUZZLEHOLE_DONE_1; break;
-                case ITEM_PUZZLEHOLE_2 : type = ITEM_PUZZLEHOLE_DONE_2; break;
-                case ITEM_PUZZLEHOLE_3 : type = ITEM_PUZZLEHOLE_DONE_3; break;
-                case ITEM_PUZZLEHOLE_4 : type = ITEM_PUZZLEHOLE_DONE_4; break;
+            switch (type)
+            {
+            case ITEM_PUZZLEHOLE_1:
+                type = ITEM_PUZZLEHOLE_DONE_1;
+                break;
+            case ITEM_PUZZLEHOLE_2:
+                type = ITEM_PUZZLEHOLE_DONE_2;
+                break;
+            case ITEM_PUZZLEHOLE_3:
+                type = ITEM_PUZZLEHOLE_DONE_3;
+                break;
+            case ITEM_PUZZLEHOLE_4:
+                type = ITEM_PUZZLEHOLE_DONE_4;
+                break;
             }
 
             return;
@@ -719,40 +737,40 @@ struct PuzzleHole : Hole
     }
 };
 
-
 struct TrapFloor : Object
 {
-    enum {
+    enum
+    {
         STATE_STATIC,
         STATE_SHAKE,
         STATE_FALL,
         STATE_DOWN
     };
 
-    TrapFloor(Room* room) : Object(room) {}
+    TrapFloor(Room *room) : Object(room) {}
 
     virtual void update()
     {
         switch (state)
         {
-            case STATE_STATIC:
-                if (getLara(pos)->pos.y != pos.y - 512)
-                {
-                    flags &= ~ITEM_FLAG_STATUS;
-                    deactivate();
-                    return;
-                }
-                goalState = STATE_SHAKE;
-                break;
-            case STATE_SHAKE:
-                goalState = STATE_FALL;
-                break;
-            case STATE_FALL:
-                if (goalState != STATE_DOWN)
-                {
-                    flags |= ITEM_FLAG_GRAVITY;
-                }
-                break;
+        case STATE_STATIC:
+            if (getLara(pos)->pos.y != pos.y - 512)
+            {
+                flags &= ~ITEM_FLAG_STATUS;
+                deactivate();
+                return;
+            }
+            goalState = STATE_SHAKE;
+            break;
+        case STATE_SHAKE:
+            goalState = STATE_FALL;
+            break;
+        case STATE_FALL:
+            if (goalState != STATE_DOWN)
+            {
+                flags |= ITEM_FLAG_GRAVITY;
+            }
+            break;
         }
 
         animProcess();
@@ -763,7 +781,8 @@ struct TrapFloor : Object
             return;
         }
 
-        if (state == STATE_FALL) {
+        if (state == STATE_FALL)
+        {
             updateRoom();
         }
 
@@ -780,7 +799,8 @@ struct TrapFloor : Object
     virtual void draw()
     {
         int32 oldAnimIndex = animIndex;
-        if ((state == STATE_STATIC) && level.models[ITEM_TRAP_FLOOR_LOD].type) {
+        if ((state == STATE_STATIC) && level.models[ITEM_TRAP_FLOOR_LOD].type)
+        {
             type = ITEM_TRAP_FLOOR_LOD;
             animIndex = level.models[type].animIndex;
         }
@@ -791,22 +811,22 @@ struct TrapFloor : Object
 #endif
 };
 
-
 struct TrapSwingBlade : Object
 {
-    enum {
+    enum
+    {
         STATE_STATIC,
         STATE_BEGIN,
         STATE_SWING,
         STATE_END
     };
 
-    TrapSwingBlade(Room* room) : Object(room)
+    TrapSwingBlade(Room *room) : Object(room)
     {
         flags |= ITEM_FLAG_SHADOW;
     }
 
-    virtual void collide(Lara* lara, CollisionInfo* cinfo)
+    virtual void collide(Lara *lara, CollisionInfo *cinfo)
     {
         if ((flags & ITEM_FLAG_STATUS) != ITEM_FLAG_STATUS_ACTIVE)
             return;
@@ -825,12 +845,17 @@ struct TrapSwingBlade : Object
 
     virtual void update()
     {
-        if (isActive()) {
-            if (state == STATE_STATIC) {
+        if (isActive())
+        {
+            if (state == STATE_STATIC)
+            {
                 goalState = STATE_SWING;
             }
-        } else {
-            if (state == STATE_SWING) {
+        }
+        else
+        {
+            if (state == STATE_SWING)
+            {
                 goalState = STATE_STATIC;
             }
         }
@@ -839,15 +864,14 @@ struct TrapSwingBlade : Object
     }
 };
 
-
 struct Dart : Object
 {
-    Dart(Room* room) : Object(room)
+    Dart(Room *room) : Object(room)
     {
         flags |= ITEM_FLAG_SHADOW;
     }
 
-    virtual void collide(Lara* lara, CollisionInfo* cinfo)
+    virtual void collide(Lara *lara, CollisionInfo *cinfo)
     {
         if (!updateHitMask(lara, cinfo))
             return;
@@ -873,15 +897,15 @@ struct Dart : Object
     }
 };
 
-
 struct TrapDartEmitter : Object
 {
-    enum {
+    enum
+    {
         STATE_IDLE,
         STATE_FIRE
     };
 
-    TrapDartEmitter(Room* room) : Object(room) {}
+    TrapDartEmitter(Room *room) : Object(room) {}
 
     virtual void update()
     {
@@ -899,7 +923,7 @@ struct TrapDartEmitter : Object
             p.y = -512;
             p += pos;
 
-            ItemObj* dart = ItemObj::add(ITEM_DART, room, p, angle.y);
+            ItemObj *dart = ItemObj::add(ITEM_DART, room, p, angle.y);
 
             if (dart)
             {
@@ -918,19 +942,20 @@ struct TrapDartEmitter : Object
     }
 };
 
-
 struct Block : Object
 {
-    enum {
+    enum
+    {
         STATE_NONE,
         STATE_READY,
         STATE_PUSH,
         STATE_PULL
     };
 
-    Block(Room* room) : Object(room)
+    Block(Room *room) : Object(room)
     {
-        if ((flags & ITEM_FLAG_STATUS) != ITEM_FLAG_STATUS_INVISIBLE) {
+        if ((flags & ITEM_FLAG_STATUS) != ITEM_FLAG_STATUS_INVISIBLE)
+        {
             updateFloor(-1024);
         }
     }
@@ -938,14 +963,18 @@ struct Block : Object
     void updateFloor(int32 offset)
     {
         room->modify();
-        
-        Sector* sector = (Sector*)room->getSector(pos.x, pos.z);
 
-        if (sector->floor == NO_FLOOR) {
-            sector->floor = sector->ceiling + (offset >> 8); 
-        } else {
+        Sector *sector = (Sector *)room->getSector(pos.x, pos.z);
+
+        if (sector->floor == NO_FLOOR)
+        {
+            sector->floor = sector->ceiling + (offset >> 8);
+        }
+        else
+        {
             sector->floor += (offset >> 8);
-            if (sector->floor == sector->ceiling) {
+            if (sector->floor == sector->ceiling)
+            {
                 sector->floor = NO_FLOOR;
             }
         }
@@ -955,15 +984,15 @@ struct Block : Object
 
     bool checkBlocking()
     {
-        const Sector* sector = room->getSector(pos.x, pos.z);
+        const Sector *sector = room->getSector(pos.x, pos.z);
 
         return (sector->floor == NO_FLOOR) || ((sector->floor << 8) + 1024 == pos.y);
     }
 
     bool checkObstacles(int32 x, int32 z, int32 height)
     {
-        Room* nextRoom = room->getRoom(x, pos.y, z);
-        const Sector* sector = nextRoom->getSector(x, z);
+        Room *nextRoom = room->getRoom(x, pos.y, z);
+        const Sector *sector = nextRoom->getSector(x, z);
 
         int32 floor = pos.y;
         int32 ceiling = pos.y - height;
@@ -990,7 +1019,7 @@ struct Block : Object
         return checkObstacles(pos.x + offset.x, pos.z + offset.z, 1024);
     }
 
-    bool checkPull(ItemObj* lara)
+    bool checkPull(ItemObj *lara)
     {
         if (!checkBlocking())
             return false;
@@ -1003,7 +1032,7 @@ struct Block : Object
         return checkObstacles(lara->pos.x + offset.x, lara->pos.z + offset.z, LARA_HEIGHT);
     }
 
-    virtual void collide(Lara* lara, CollisionInfo* cinfo)
+    virtual void collide(Lara *lara, CollisionInfo *cinfo)
     {
         if (!(lara->input & IN_ACTION))
             return;
@@ -1068,7 +1097,8 @@ struct Block : Object
             lara->angle.y = angle.y;
             lara->alignWall(LARA_RADIUS);
             lara->animProcess();
-            if (lara->state == Lara::STATE_BLOCK_READY) {
+            if (lara->state == Lara::STATE_BLOCK_READY)
+            {
                 lara->setWeaponState(WEAPON_STATE_BUSY);
             }
         }
@@ -1110,15 +1140,17 @@ struct Block : Object
         }
     }
 
-    virtual uint8* load(uint8* data)
+    virtual uint8 *load(uint8 *data)
     {
-        if ((flags & ITEM_FLAG_STATUS) != ITEM_FLAG_STATUS_INVISIBLE) {
+        if ((flags & ITEM_FLAG_STATUS) != ITEM_FLAG_STATUS_INVISIBLE)
+        {
             updateFloor(1024);
         }
 
         data = ItemObj::load(data);
 
-        if ((flags & ITEM_FLAG_STATUS) != ITEM_FLAG_STATUS_INVISIBLE) {
+        if ((flags & ITEM_FLAG_STATUS) != ITEM_FLAG_STATUS_INVISIBLE)
+        {
             updateFloor(-1024);
         }
 
